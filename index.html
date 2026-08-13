@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -16,16 +16,26 @@
       --accent: #e8ff4f;
     }
 
+    body.light-mode {
+      --bg: #f4f4f5;
+      --card: #ffffff;
+      --line: #e4e4e7;
+      --text: #09090b;
+      --muted: #71717a;
+      --accent: #facc15;
+    }
+
     * { box-sizing: border-box; }
     html, body {
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font: 15px/1.55 system-ui, -apple-system, sans-serif;
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
       padding-bottom: 70px;
+      transition: background 0.3s, color 0.3s;
     }
 
-    button, input, textarea { font: inherit; }
+    button, input, textarea, select { font: inherit; }
     button { cursor: pointer; }
 
     .shell {
@@ -41,7 +51,8 @@
       position: sticky;
       top: 0;
       z-index: 4;
-      background: rgba(11, 11, 12, 0.85);
+      background: var(--bg);
+      opacity: 0.95;
       backdrop-filter: blur(12px);
       display: flex;
       align-items: center;
@@ -97,7 +108,7 @@
     .card { margin-top: 15px; padding: 15px; }
 
     .profileBox { padding: 20px; margin: 16px 0; }
-    .avatar { width: 56px; height: 56px; border-radius: 50%; background: #202024; display: grid; place-items: center; font-weight: 900; font-size: 20px; }
+    .avatar { width: 56px; height: 56px; border-radius: 50%; background: #202024; color:#fff; display: grid; place-items: center; font-weight: 900; font-size: 20px; }
     .walletBox { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 
     .bottom-nav {
@@ -106,8 +117,7 @@
       left: 0;
       right: 0;
       height: 60px;
-      background: rgba(11, 11, 12, 0.95);
-      backdrop-filter: blur(16px);
+      background: var(--bg);
       border-top: 1px solid var(--line);
       display: flex;
       justify-content: space-around;
@@ -134,7 +144,7 @@
     .fab-btn {
       position: fixed;
       bottom: 75px;
-      left: 20px;
+      right: 20px;
       width: 52px;
       height: 52px;
       border-radius: 50%;
@@ -146,14 +156,16 @@
       z-index: 9;
     }
 
+    html[dir="rtl"] .fab-btn { right: auto; left: 20px; }
+
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
     .modal.show { display: flex; }
     .modalBox { width: min(440px, 100%); padding: 20px; }
-    .modalBox input, .modalBox textarea { width: 100%; background: #0d0d0f; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 11px; margin: 7px 0 12px; outline: 0; }
-    .close { float: left; background: none; border: 0; color: var(--muted); font-size: 22px; }
+    .modalBox input, .modalBox textarea, .modalBox select { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 11px; margin: 7px 0 12px; outline: 0; }
+    .close { float: right; background: none; border: 0; color: var(--muted); font-size: 22px; }
 
-    .addr-box { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 10px 0; border: 1px dashed var(--accent); color: var(--accent); direction: ltr; text-align: center; }
-    .toast { position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); background: #f4f4f5; color: #080808; padding: 9px 16px; border-radius: 999px; display: none; z-index: 30; font-weight: 700; font-size: 13px; text-align: center; }
+    .addr-box { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 10px 0; border: 1px dashed var(--accent); color: var(--accent); text-align: center; }
+    .toast { position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 999px; display: none; z-index: 30; font-weight: 700; font-size: 13px; text-align: center; }
 
     @media(max-width: 768px) {
       .shell { grid-template-columns: 1fr; padding: 0 10px; }
@@ -167,7 +179,8 @@
     <main>
       <header class="top-bar">
         <div class="logo">J<span>!</span></div>
-        <div class="title" id="pageTitle">خانه</div>
+        <div class="title" id="pageTitle">Home</div>
+        <button class="primary" style="padding:4px 12px;font-size:12px" onclick="openAuthModal()" id="authBtn">Login</button>
       </header>
       <section id="view"></section>
     </main>
@@ -175,7 +188,7 @@
     <aside class="right">
       <div class="card">
         <h3>JEST</h3>
-        <small class="muted">شبکه اجتماعی و بازارچه استندآپ و جوک</small>
+        <small class="muted">Text Comedy Marketplace</small>
       </div>
     </aside>
   </div>
@@ -183,15 +196,15 @@
   <nav class="bottom-nav">
     <button onclick="switchTab('home')" id="tab-home" class="active">
       <span class="nav-icon">⌂</span>
-      <span class="nav-label">خانه</span>
+      <span class="nav-label" id="lbl-home">Home</span>
     </button>
     <button onclick="switchTab('explore')" id="tab-explore">
       <span class="nav-icon">⌕</span>
-      <span class="nav-label">داغ‌ترین‌ها</span>
+      <span class="nav-label" id="lbl-explore">Trending</span>
     </button>
     <button onclick="switchTab('profile')" id="tab-profile">
       <span class="nav-icon">◉</span>
-      <span class="nav-label">پروفایل</span>
+      <span class="nav-label" id="lbl-profile">Profile</span>
     </button>
   </nav>
 
@@ -202,11 +215,11 @@
 
   <script>
     // ----------------------------------------------------
-    // تنظیمات اصلی - لطفاً URL واقعی پروژه‌تان را بگذارید
+    // CONFIGURATION
     // ----------------------------------------------------
     const MY_USDT_WALLETPATH = "0xafa01fc139c8d83bb023b19b6e50d780c13af322"; 
     
-    // ⚠️ مهم: این آدرس را با Project URL واقعی خود از Supabase جایگزین کنید:
+    // REPLACE WITH YOUR ACTUAL SUPABASE URL:
     const SUPABASE_URL = "https://ajddkfdfpmiwwjsoyluh.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_rV9kfH5v6te1Bp1brgPhDQ_0lES226_"; 
     
@@ -215,26 +228,40 @@
       if (window.supabase && SUPABASE_URL.startsWith("https://")) {
         dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       }
-    } catch(e) { console.error("Supabase Init Error:", e); }
+    } catch(e) {}
 
+    // State Variables
     let currentTab = "home";
-    let currentUser = { name: "کمدین", handle: "@comic_user", balance: 10.00 };
+    let currentLang = "en";
+    let isLightMode = false;
+    let currentUser = JSON.parse(localStorage.getItem("jest_user")) || { name: "Guest Comic", handle: "@guest", balance: 10.00 };
+
     let fetchedPosts = [];
+
+    const dict = {
+      en: {
+        home: "Home", trending: "Trending", profile: "Profile", placeholder: "Type a joke...",
+        cost: "Publishing costs $1", publish: "Publish ($1)", noJokes: "No jokes yet!",
+        balance: "Wallet Balance", deposit: "Deposit $10 (USDT)", earnings: "Creator Earnings",
+        theme: "Theme", lang: "Language", light: "Light Mode", dark: "Dark Mode", login: "Login / Register"
+      },
+      fa: {
+        home: "خانه", trending: "داغ‌ترین‌ها", profile: "پروفایل", placeholder: "یک جوک بنویس...",
+        cost: "هزینه انتشار: ۱ دلار", publish: "انتشار (۱$)", noJokes: "هنوز جوکی نیست!",
+        balance: "موجودی حساب", deposit: "افزایش ۱۰ دلار (USDT)", earnings: "درآمد شما",
+        theme: "تم صفحه", lang: "زبان", light: "روشن (Light)", dark: "تاریک (Dark)", login: "ورود / ثبت نام"
+      }
+    };
 
     async function loadPostsFromSupabase() {
       if(!dbClient) return;
       try {
         let { data, error } = await dbClient.from('posts').select('*').order('created_at', { ascending: false });
-        if(error) {
-          console.error(error);
-          showToast("خطا در دریافت پست‌ها: " + error.message);
-        } else if(data) {
+        if(!error && data) {
           fetchedPosts = data;
           renderView();
         }
-      } catch(err) {
-        console.error(err);
-      }
+      } catch(err) {}
     }
 
     function switchTab(tab) {
@@ -243,52 +270,62 @@
       const activeBtn = document.getElementById("tab-" + tab);
       if(activeBtn) activeBtn.classList.add("active");
 
-      const titleMap = { home: "خانه", explore: "داغ‌ترین‌ها", profile: "پروفایل" };
-      document.getElementById("pageTitle").textContent = titleMap[tab] || "JEST";
+      document.getElementById("pageTitle").textContent = dict[currentLang][tab] || tab;
       renderView();
     }
 
     function renderView() {
       const view = document.getElementById("view");
+      document.getElementById("authBtn").textContent = currentUser.handle !== "@guest" ? currentUser.handle : dict[currentLang].login;
+
       if (currentTab === "profile") return renderProfile(view);
       if (currentTab === "explore") return renderExplore(view);
       renderFeed(view);
     }
 
     function renderFeed(v) {
+      const t = dict[currentLang];
       v.innerHTML = `
         <div class="composer">
-          <textarea id="quick" placeholder="یک جوک یا خاطره خنده‌دار بنویس..."></textarea>
+          <textarea id="quick" placeholder="${t.placeholder}"></textarea>
           <div class="row">
-            <span class="muted">هزینه انتشار: ۱ دلار</span>
-            <button class="primary" onclick="publishJoke()">انتشار (۱$)</button>
+            <span class="muted">${t.cost}</span>
+            <button class="primary" onclick="publishJoke()">${t.publish}</button>
           </div>
         </div>
-        <div id="postsList">${fetchedPosts.length ? fetchedPosts.map(postTemplate).join("") : '<div class="muted" style="text-align:center;padding:30px">هنوز جوکی ثبت نشده! اولین نفر باشید.</div>'}</div>
+        <div id="postsList">${fetchedPosts.length ? fetchedPosts.map(postTemplate).join("") : `<div class="muted" style="text-align:center;padding:30px">${t.noJokes}</div>`}</div>
       `;
     }
 
     function renderExplore(v) {
-      v.innerHTML = `<div class="card"><h3>محبوب‌ترین جوک‌ها</h3><p class="muted">بر اساس لایک و خریداری شده‌ها</p></div>` +
-        [...fetchedPosts].sort((a,b) => (b.buyers ? b.buyers.length : 0) - (a.buyers ? a.buyers.length : 0)).map(postTemplate).join("");
+      v.innerHTML = [...fetchedPosts].sort((a,b) => (b.buyers ? b.buyers.length : 0) - (a.buyers ? a.buyers.length : 0)).map(postTemplate).join("");
     }
 
     function renderProfile(v) {
+      const t = dict[currentLang];
       v.innerHTML = `
         <div class="profileBox">
           <div class="avatar">${currentUser.name[0]}</div>
           <h2>${currentUser.name}</h2>
-          <div class="handle" style="direction:ltr;text-align:right">${currentUser.handle}</div>
+          <div class="handle">${currentUser.handle}</div>
           
           <div class="walletBox">
-            <h3>کیف پول و شارژ حساب</h3>
-            <p class="muted">موجودی کیف پول: <b style="color:var(--text);font-size:18px">$${currentUser.balance.toFixed(2)}</b></p>
-            <button class="primary" onclick="openTopup()">افزایش موجودی ۱۰ دلار (USDT)</button>
+            <h3>${t.balance}: <b style="color:var(--text);font-size:18px">$${currentUser.balance.toFixed(2)}</b></h3>
+            <button class="primary" onclick="openTopup()">${t.deposit}</button>
+          </div>
 
-            <div class="card" style="margin-top:15px">
-              <b>درآمد شما از فروش جوک‌ها</b>
-              <p class="muted">۵۰٪ از هر استفاده کاربر دیگر مستقیماً حساب می‌شود.</p>
-              <strong style="color:var(--accent);font-size:20px">$0.00</strong>
+          <div class="walletBox">
+            <h3>Settings</h3>
+            <div class="row" style="margin:10px 0">
+              <span>${t.theme}:</span>
+              <button class="primary" style="padding:4px 12px;font-size:12px" onclick="toggleTheme()">${isLightMode ? t.dark : t.light}</button>
+            </div>
+            <div class="row" style="margin:10px 0">
+              <span>${t.lang}:</span>
+              <select onchange="changeLang(this.value)" style="width:auto;padding:4px 8px">
+                <option value="en" ${currentLang==='en'?'selected':''}>English</option>
+                <option value="fa" ${currentLang==='fa'?'selected':''}>فارسی</option>
+              </select>
             </div>
           </div>
         </div>
@@ -304,13 +341,13 @@
           </div>
           <div class="content">${escapeHtml(p.text || "")}</div>
           <div class="stats">
-            <span>${p.likes || 0} لایک</span>
-            <span>${p.buyers ? p.buyers.length : 0} خریدار</span>
+            <span>${p.likes || 0} Likes</span>
+            <span>${p.buyers ? p.buyers.length : 0} Buyers</span>
           </div>
           <div class="actions">
-            <button onclick="likePost(${p.id})">♡ لایک</button>
-            <button onclick="showBuyers(${p.id})">${p.buyers ? p.buyers.length : 0} خریدار</button>
-            <button class="buy" onclick="buyJoke(${p.id})">استفاده (۱$)</button>
+            <button onclick="likePost(${p.id})">♡ Like</button>
+            <button onclick="showBuyers(${p.id})">${p.buyers ? p.buyers.length : 0} Buyers</button>
+            <button class="buy" onclick="buyJoke(${p.id})">$1 Use</button>
           </div>
         </article>
       `;
@@ -318,93 +355,120 @@
 
     async function publishJoke() {
       const txt = document.getElementById("quick") ? document.getElementById("quick").value.trim() : "";
-      if (!txt) return showToast("لطفاً ابتدا جوک را بنویسید!");
-      if (currentUser.balance < 1) return showToast("موجودی کافی نیست! حساب را شارژ کنید.");
+      if (!txt) return showToast("Write a joke first!");
+      if (currentUser.balance < 1) return showToast("Balance under $1! Deposit first.");
 
-      showToast("در حال ثبت در دیتابیس...");
+      showToast("Publishing...");
 
       if(dbClient) {
         let { error } = await dbClient.from('posts').insert([{ user_handle: currentUser.handle, text: txt }]);
-        if(error) {
-          showToast("ارور دیتابیس: " + error.message);
-          return;
-        }
-      } else {
-        showToast("خطا: دیتابیس متصل نیست. لینک Supabase را چک کنید.");
-        return;
+        if(error) return showToast("Error: " + error.message);
       }
 
       currentUser.balance -= 1;
-      showToast("جوک با موفقیت منتشر شد!");
+      saveUserLocally();
+      showToast("Published for $1!");
       if(document.getElementById("quick")) document.getElementById("quick").value = "";
       loadPostsFromSupabase();
     }
 
     async function buyJoke(id) {
       const p = fetchedPosts.find(x => x.id === id);
-      if (currentUser.balance < 1) return showToast("موجودی کافی نیست!");
+      if (currentUser.balance < 1) return showToast("Balance under $1!");
       
       currentUser.balance -= 1;
+      saveUserLocally();
       let buyers = p.buyers || [];
       buyers.push(currentUser.handle);
 
-      if(dbClient) {
-        await dbClient.from('posts').update({ buyers: buyers }).eq('id', id);
-      }
+      if(dbClient) await dbClient.from('posts').update({ buyers: buyers }).eq('id', id);
 
-      showToast("حق استفاده خریداری شد!");
+      showToast("Purchased!");
       loadPostsFromSupabase();
     }
 
     async function likePost(id) {
       const p = fetchedPosts.find(x => x.id === id);
       let newLikes = (p.likes || 0) + 1;
-
-      if(dbClient) {
-        await dbClient.from('posts').update({ likes: newLikes }).eq('id', id);
-      }
-
-      showToast("لایک شد!");
+      if(dbClient) await dbClient.from('posts').update({ likes: newLikes }).eq('id', id);
+      showToast("Liked!");
       loadPostsFromSupabase();
+    }
+
+    function openAuthModal() {
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>${dict[currentLang].login}</h2>
+        <input id="authName" placeholder="Your Display Name (e.g. Alex)" value="${currentUser.name}">
+        <input id="authHandle" placeholder="Your @handle (e.g. @alex_comic)" value="${currentUser.handle}">
+        <button class="primary" style="width:100%" onclick="saveAuth()">Save / Login</button>
+      `);
+    }
+
+    function saveAuth() {
+      const name = document.getElementById("authName").value.trim();
+      let handle = document.getElementById("authHandle").value.trim();
+      if(!handle.startsWith("@")) handle = "@" + handle;
+
+      if(name && handle) {
+        currentUser.name = name;
+        currentUser.handle = handle;
+        saveUserLocally();
+        closeModal();
+        renderView();
+        showToast("Logged in as " + handle);
+      }
+    }
+
+    function toggleTheme() {
+      isLightMode = !isLightMode;
+      document.body.classList.toggle("light-mode", isLightMode);
+      renderView();
+    }
+
+    function changeLang(lang) {
+      currentLang = lang;
+      document.documentElement.dir = lang === "fa" ? "rtl" : "ltr";
+      document.getElementById("lbl-home").textContent = dict[lang].home;
+      document.getElementById("lbl-explore").textContent = dict[lang].trending;
+      document.getElementById("lbl-profile").textContent = dict[lang].profile;
+      switchTab(currentTab);
     }
 
     function openTopup() {
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
-        <h2>شارژ ۱۰ دلاری (USDT)</h2>
-        <p class="muted">مبلغ ۱۰ تتر روی شبکه BSC به آدرس زیر واریز کنید:</p>
+        <h2>Deposit ($10 USDT)</h2>
+        <p class="muted">Transfer <b>10 USDT (BSC BEP-20)</b> to:</p>
         <div class="addr-box">${MY_USDT_WALLETPATH}</div>
-        <p class="muted" style="font-size:12px">کد تراکنش (TxHash) را پس از واریز وارد کنید:</p>
-        <input id="txhash" placeholder="کد TxHash...">
-        <button class="primary" style="width:100%" onclick="submitTx()">ثبت واریزی</button>
+        <input id="txhash" placeholder="Enter TxHash...">
+        <button class="primary" style="width:100%" onclick="submitTx()">Submit TxHash</button>
       `);
     }
 
     async function submitTx() {
       const hash = document.getElementById("txhash").value.trim();
-      if(!hash) return showToast("کد تراکنش را وارد کنید!");
-      if(dbClient) {
-        await dbClient.from('deposits').insert([{ user_handle: currentUser.handle, tx_hash: hash, amount: 10 }]);
-      }
+      if(!hash) return showToast("Enter TxHash!");
+      if(dbClient) await dbClient.from('deposits').insert([{ user_handle: currentUser.handle, tx_hash: hash, amount: 10 }]);
       closeModal();
-      showToast("ثبت شد! پس از تایید توسط مدیریت حساب شارژ می‌شود.");
+      showToast("Submitted for approval!");
     }
 
     function showBuyers(id) {
       const p = fetchedPosts.find(x => x.id === id);
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
-        <h2>خریداران</h2>
-        ${(p.buyers && p.buyers.length) ? p.buyers.join("<br>") : "<p class='muted'>هنوز خریداری نشده.</p>"}
+        <h2>Joke Buyers</h2>
+        ${(p.buyers && p.buyers.length) ? p.buyers.join("<br>") : "<p class='muted'>No buyers yet.</p>"}
       `);
     }
 
     function openPublish() {
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
-        <h2>انتشار جوک (۱ دلار)</h2>
-        <textarea id="modalPublishText" rows="4" placeholder="متن جوک..."></textarea>
-        <button class="primary" style="width:100%" onclick="publishFromModal()">انتشار</button>
+        <h2>Publish Joke ($1)</h2>
+        <textarea id="modalPublishText" rows="4" placeholder="Write joke..."></textarea>
+        <button class="primary" style="width:100%" onclick="publishFromModal()">Publish</button>
       `);
     }
 
@@ -417,12 +481,12 @@
       }
     }
 
+    function saveUserLocally() { localStorage.setItem("jest_user", JSON.stringify(currentUser)); }
     function showModal(html) { document.getElementById("modalContent").innerHTML = html; document.getElementById("modal").classList.add("show"); }
     function closeModal() { document.getElementById("modal").classList.remove("show"); }
-    function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 3000); }
+    function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2500); }
     function escapeHtml(s) { return s.replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])); }
 
-    // اجرا و خواندن اطلاعات
     renderView();
     loadPostsFromSupabase();
   </script>
