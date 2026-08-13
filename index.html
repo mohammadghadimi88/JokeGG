@@ -207,11 +207,11 @@
     // ----------------------------------------------------
     // CONFIGURATION (آدرس کیف پول شما و Supabase)
     // ----------------------------------------------------
-    const MY_USDT_WALLETPATH = "0x0000000000000000000000000000000000000000"; // آدرس تتر BSC خودتان را بگذارید
+    const MY_USDT_WALLETPATH = "0xafa01fc139c8d83bb023b19b6e50d780c13af322"; 
     
-    // مقادیر پروژه‌ی Supabase خود را اینجا قرار دهید:
-    const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co"; 
-    const SUPABASE_KEY = "YOUR_ANON_KEY"; 
+    // مقادیر پروژه‌ی Supabase شما:
+    const SUPABASE_URL = "https://ajddkfdfpmiwwjsoyluh.supabase.co"; //  Project ID خودت را جای PROJECT_ID_YOURS بگذار
+    const SUPABASE_KEY = "sb_publishable_rV9kfH5v6te1Bp1brgPhDQ_0lES226_"; 
     
     const dbClient = (window.supabase && SUPABASE_URL.includes("http")) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
