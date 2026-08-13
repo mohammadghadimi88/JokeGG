@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="theme-color" content="#0b0b0c">
   <title>JEST — Stand-up Comedy Social Marketplace</title>
   <link rel="stylesheet" href="style.css">
@@ -12,26 +12,21 @@
 <body>
   <div class="app">
     <div class="shell">
-      <!-- Left Sidebar Nav -->
-      <aside class="side">
-        <div class="logo">J<span>!</span></div>
-        <nav id="nav">
-          <button data-page="home" class="active">⌂ Home</button>
-          <button data-page="explore">⌕ Explore</button>
-          <button data-page="profile">◉ Profile</button>
-        </nav>
-        <button class="primary publish-btn" onclick="openPublish()">+ Post Joke ($1)</button>
-      </aside>
-
-      <!-- Main Feed Content -->
+      
+      <!-- Main Content Area -->
       <main>
-        <div class="top">
+        <!-- Top Header Bar -->
+        <header class="top-bar">
+          <div class="logo">J<span>!</span></div>
           <div class="title" id="pageTitle">Home</div>
-        </div>
+          <button class="pill-top" onclick="openPublish()">+ Post</button>
+        </header>
+
+        <!-- Dynamic Feed Container -->
         <section id="view"></section>
       </main>
 
-      <!-- Right Sidebar -->
+      <!-- Right Sidebar (Desktop only) -->
       <aside class="right">
         <input class="search" placeholder="Search comedians..." oninput="searchPeople(this.value)">
         <div class="card">
@@ -42,8 +37,28 @@
           <small class="muted">JEST · Text Comedy Marketplace</small>
         </div>
       </aside>
+
     </div>
   </div>
+
+  <!-- Bottom Navigation Bar (Mobile & Desktop App Style) -->
+  <nav class="bottom-nav" id="nav">
+    <button data-page="home" class="active">
+      <span class="nav-icon">⌂</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button data-page="explore">
+      <span class="nav-icon">⌕</span>
+      <span class="nav-label">Explore</span>
+    </button>
+    <button data-page="profile">
+      <span class="nav-icon">◉</span>
+      <span class="nav-label">Profile</span>
+    </button>
+  </nav>
+
+  <!-- Floating Action Button for quick posting -->
+  <button class="fab-btn" onclick="openPublish()">+</button>
 
   <!-- Reusable Modal & Toast -->
   <div class="modal" id="modal"><div class="modalBox" id="modalContent"></div></div>
