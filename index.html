@@ -205,22 +205,27 @@
 
   <script>
     // ----------------------------------------------------
-    // CONFIGURATION (آدرس کیف پول شما و Supabase)
+    // CONFIGURATION
     // ----------------------------------------------------
     const MY_USDT_WALLETPATH = "0xafa01fc139c8d83bb023b19b6e50d780c13af322"; 
     
-    // مقادیر پروژه‌ی Supabase شما:
-    const SUPABASE_URL = "https://ajddkfdfpmiwwjsoyluh.supabase.co"; //  Project ID خودت را جای PROJECT_ID_YOURS بگذار
+    const SUPABASE_URL = "https://mohammadghadimi88.github.io/JokeGG/"; 
     const SUPABASE_KEY = "sb_publishable_rV9kfH5v6te1Bp1brgPhDQ_0lES226_"; 
     
-    const dbClient = (window.supabase && SUPABASE_URL.includes("http")) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+    const dbClient = (window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
-    // State Variables
     let currentTab = "home";
     let currentUser = { name: "Standup Comic", handle: "@comic_user", balance: 10.00 };
-    let localPosts = [
-      { id: 101, name: "Maya Reed", handle: "@mayareed", text: "My therapist told me to stop blaming myself. I said, 'Great. Whose fault is that?'", likes: 12, buyers: [] }
-    ];
+    let fetchedPosts = [];
+
+    async function loadPostsFromSupabase() {
+      if(!dbClient) return;
+      let { data, error } = await dbClient.from('posts').select('*').order('created_at', { ascending: false });
+      if(!error && data) {
+        fetchedPosts = data;
+        renderView();
+      }
+    }
 
     function switchTab(tab) {
       currentTab = tab;
@@ -248,13 +253,13 @@
             <button class="primary" onclick="publishJoke()">Publish ($1)</button>
           </div>
         </div>
-        <div id="postsList">${localPosts.map(postTemplate).join("")}</div>
+        <div id="postsList">${fetchedPosts.length ? fetchedPosts.map(postTemplate).join("") : '<div class="muted" style="text-align:center;padding:30px">No jokes yet. Post the first one!</div>'}</div>
       `;
     }
 
     function renderExplore(v) {
       v.innerHTML = `<div class="card"><h3>Trending Jokes</h3><p class="muted">Top jokes ordered by purchases & likes.</p></div>` +
-        [...localPosts].sort((a,b) => (b.buyers.length || 0) - (a.buyers.length || 0)).map(postTemplate).join("");
+        [...fetchedPosts].sort((a,b) => (b.buyers ? b.buyers.length : 0) - (a.buyers ? a.buyers.length : 0)).map(postTemplate).join("");
     }
 
     function renderProfile(v) {
@@ -283,10 +288,10 @@
       return `
         <article class="post">
           <div class="postHead">
-            <span class="user">${p.name} <small class="handle">${p.handle}</small></span>
+            <span class="user">${p.user_handle || "@anonymous"}</span>
             <span class="muted">#${p.id}</span>
           </div>
-          <div class="content">${escapeHtml(p.text)}</div>
+          <div class="content">${escapeHtml(p.text || "")}</div>
           <div class="stats">
             <span>${p.likes || 0} likes</span>
             <span>${p.buyers ? p.buyers.length : 0} buyers</span>
@@ -300,36 +305,53 @@
       `;
     }
 
-    function publishJoke() {
+    async function publishJoke() {
       const txt = document.getElementById("quick") ? document.getElementById("quick").value.trim() : "";
       if (!txt) return showToast("Write a joke first!");
       if (currentUser.balance < 1) return showToast("Balance under $1! Deposit first.");
 
-      currentUser.balance -= 1;
-      const newPost = { id: Date.now() % 10000, name: currentUser.name, handle: currentUser.handle, text: txt, likes: 0, buyers: [] };
-      localPosts.unshift(newPost);
-      
-      if(dbClient) dbClient.from('posts').insert([{ user_handle: currentUser.handle, text: txt }]);
+      showToast("Publishing to database...");
 
+      if(dbClient) {
+        let { error } = await dbClient.from('posts').insert([{ user_handle: currentUser.handle, text: txt }]);
+        if(error) {
+          showToast("Error: " + error.message);
+          return;
+        }
+      }
+
+      currentUser.balance -= 1;
       showToast("Published for $1!");
-      renderView();
+      if(document.getElementById("quick")) document.getElementById("quick").value = "";
+      loadPostsFromSupabase();
     }
 
-    function buyJoke(id) {
-      const p = localPosts.find(x => x.id === id);
+    async function buyJoke(id) {
+      const p = fetchedPosts.find(x => x.id === id);
       if (currentUser.balance < 1) return showToast("Balance under $1! Deposit funds in Profile.");
+      
       currentUser.balance -= 1;
-      if(!p.buyers) p.buyers = [];
-      p.buyers.push(currentUser.handle);
+      let buyers = p.buyers || [];
+      buyers.push(currentUser.handle);
+
+      if(dbClient) {
+        await dbClient.from('posts').update({ buyers: buyers }).eq('id', id);
+      }
+
       showToast("Rights purchased for $1!");
-      renderView();
+      loadPostsFromSupabase();
     }
 
-    function likePost(id) {
-      const p = localPosts.find(x => x.id === id);
-      p.likes = (p.likes || 0) + 1;
+    async function likePost(id) {
+      const p = fetchedPosts.find(x => x.id === id);
+      let newLikes = (p.likes || 0) + 1;
+
+      if(dbClient) {
+        await dbClient.from('posts').update({ likes: newLikes }).eq('id', id);
+      }
+
       showToast("Liked!");
-      renderView();
+      loadPostsFromSupabase();
     }
 
     function openTopup() {
@@ -344,16 +366,18 @@
       `);
     }
 
-    function submitTx() {
+    async function submitTx() {
       const hash = document.getElementById("txhash").value.trim();
       if(!hash) return showToast("Enter TxHash code!");
-      if(dbClient) dbClient.from('deposits').insert([{ user_handle: currentUser.handle, tx_hash: hash, amount: 10 }]);
+      if(dbClient) {
+        await dbClient.from('deposits').insert([{ user_handle: currentUser.handle, tx_hash: hash, amount: 10 }]);
+      }
       closeModal();
-      showToast("Submitted! Balance will update after manual verification.");
+      showToast("Submitted! Balance will update after verification.");
     }
 
     function showBuyers(id) {
-      const p = localPosts.find(x => x.id === id);
+      const p = fetchedPosts.find(x => x.id === id);
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
         <h2>Joke Buyers</h2>
@@ -374,20 +398,19 @@
       const txt = document.getElementById("modalPublishText").value.trim();
       if(txt) {
         closeModal();
-        currentUser.balance -= 1;
-        localPosts.unshift({ id: Date.now() % 10000, name: currentUser.name, handle: currentUser.handle, text: txt, likes: 0, buyers: [] });
-        showToast("Published for $1!");
-        renderView();
+        document.getElementById("quick").value = txt;
+        publishJoke();
       }
     }
 
     function showModal(html) { document.getElementById("modalContent").innerHTML = html; document.getElementById("modal").classList.add("show"); }
     function closeModal() { document.getElementById("modal").classList.remove("show"); }
-    function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2200); }
+    function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2500); }
     function escapeHtml(s) { return s.replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])); }
 
-    // Init App
+    // Init App & Load Real Database Posts
     renderView();
+    loadPostsFromSupabase();
   </script>
 </body>
 </html>
