@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#0b0b0c">
+  <title>JEST — Comedy Social Marketplace</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --card: #111113;
+      --line: #252529;
+      --text: #f4f4f5;
+      --muted: #929298;
+      --accent: #e8ff4f;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      padding-bottom: 70px;
+    }
+
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .shell {
+      max-width: 950px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: minmax(0, 620px) 280px;
+      gap: 25px;
+      padding: 0 15px;
+    }
+
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      background: rgba(11, 11, 12, 0.85);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 5px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .logo { font-size: 24px; font-weight: 900; }
+    .logo span { color: var(--accent); }
+    .title { font-size: 19px; font-weight: 800; }
+
+    .composer, .post, .profileBox, .modalBox, .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 16px;
+    }
+
+    .composer { padding: 14px; margin: 16px 0; }
+    .composer textarea {
+      width: 100%;
+      min-height: 80px;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      color: var(--text);
+      font-size: 16px;
+      resize: vertical;
+    }
+
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .muted { color: var(--muted); }
+    .primary { background: var(--accent); color: #080808; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; }
+    .secondary { background: #19191c; color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; }
+
+    .post { padding: 16px; margin: 12px 0; }
+    .postHead { display: flex; justify-content: space-between; }
+    .user { font-weight: 800; }
+    .handle { color: var(--muted); font-weight: 500; }
+    .content { font-size: 16px; white-space: pre-wrap; margin: 12px 0; }
+    .stats { display: flex; gap: 18px; color: var(--muted); font-size: 13px; }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+    .actions button { background: none; border: 0; color: var(--muted); }
+    .buy { color: var(--accent) !important; font-weight: 800; }
+
+    .right { position: sticky; top: 15px; height: max-content; margin-top: 15px; }
+    .search { width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; color: var(--text); outline: 0; }
+    .card { margin-top: 15px; padding: 15px; }
+
+    .profileBox { padding: 20px; margin: 16px 0; }
+    .avatar { width: 56px; height: 56px; border-radius: 50%; background: #202024; display: grid; place-items: center; font-weight: 900; font-size: 20px; }
+    .walletBox { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(11, 11, 12, 0.95);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .bottom-nav button {
+      background: none;
+      border: 0;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      height: 100%;
+      padding: 6px 0;
+    }
+
+    .bottom-nav button.active { color: var(--accent); }
+    .nav-icon { font-size: 18px; }
+    .nav-label { font-size: 11px; font-weight: 600; margin-top: 2px; }
+
+    .fab-btn {
+      position: fixed;
+      bottom: 75px;
+      right: 20px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #000;
+      border: 0;
+      font-size: 26px;
+      font-weight: 900;
+      z-index: 9;
+    }
+
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
+    .modal.show { display: flex; }
+    .modalBox { width: min(440px, 100%); padding: 20px; }
+    .modalBox input, .modalBox textarea { width: 100%; background: #0d0d0f; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 11px; margin: 7px 0 12px; outline: 0; }
+    .close { float: right; background: none; border: 0; color: var(--muted); font-size: 22px; }
+
+    .addr-box { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 10px 0; border: 1px dashed var(--accent); color: var(--accent); }
+    .toast { position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); background: #f4f4f5; color: #080808; padding: 9px 16px; border-radius: 999px; display: none; z-index: 30; font-weight: 700; font-size: 13px; }
+
+    @media(max-width: 768px) {
+      .shell { grid-template-columns: 1fr; padding: 0 10px; }
+      .right { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="shell">
+    <main>
+      <header class="top-bar">
+        <div class="logo">J<span>!</span></div>
+        <div class="title" id="pageTitle">Home</div>
+      </header>
+      <section id="view"></section>
+    </main>
+
+    <aside class="right">
+      <input class="search" placeholder="Search comedians...">
+      <div class="card">
+        <h3>JEST</h3>
+        <small class="muted">Text Comedy Marketplace</small>
+      </div>
+    </aside>
+  </div>
+
+  <nav class="bottom-nav">
+    <button onclick="switchTab('home')" id="tab-home" class="active">
+      <span class="nav-icon">⌂</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button onclick="switchTab('explore')" id="tab-explore">
+      <span class="nav-icon">⌕</span>
+      <span class="nav-label">Explore</span>
+    </button>
+    <button onclick="switchTab('profile')" id="tab-profile">
+      <span class="nav-icon">◉</span>
+      <span class="nav-label">Profile</span>
+    </button>
+  </nav>
+
+  <button class="fab-btn" onclick="openPublish()">+</button>
+
+  <div class="modal" id="modal"><div class="modalBox" id="modalContent"></div></div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ----------------------------------------------------
+    // CONFIGURATION (آدرس کیف پول شما و Supabase)
+    // ----------------------------------------------------
+    const MY_USDT_WALLETPATH = "0x0000000000000000000000000000000000000000"; // آدرس تتر BSC خودتان را بگذارید
+    
+    // مقادیر پروژه‌ی Supabase خود را اینجا قرار دهید:
+    const SUPABASE_URL = "https://YOUR_PROJECT_ID.supabase.co"; 
+    const SUPABASE_KEY = "YOUR_ANON_KEY"; 
+    
+    const dbClient = (window.supabase && SUPABASE_URL.includes("http")) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+    // State Variables
+    let currentTab = "home";
+    let currentUser = { name: "Standup Comic", handle: "@comic_user", balance: 10.00 };
+    let localPosts = [
+      { id: 101, name: "Maya Reed", handle: "@mayareed", text: "My therapist told me to stop blaming myself. I said, 'Great. Whose fault is that?'", likes: 12, buyers: [] }
+    ];
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll(".bottom-nav button").forEach(b => b.classList.remove("active"));
+      const activeBtn = document.getElementById("tab-" + tab);
+      if(activeBtn) activeBtn.classList.add("active");
+
+      document.getElementById("pageTitle").textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
+      renderView();
+    }
+
+    function renderView() {
+      const view = document.getElementById("view");
+      if (currentTab === "profile") return renderProfile(view);
+      if (currentTab === "explore") return renderExplore(view);
+      renderFeed(view);
+    }
+
+    function renderFeed(v) {
+      v.innerHTML = `
+        <div class="composer">
+          <textarea id="quick" placeholder="Type a joke or funny memory..."></textarea>
+          <div class="row">
+            <span class="muted">Publishing costs $1</span>
+            <button class="primary" onclick="publishJoke()">Publish ($1)</button>
+          </div>
+        </div>
+        <div id="postsList">${localPosts.map(postTemplate).join("")}</div>
+      `;
+    }
+
+    function renderExplore(v) {
+      v.innerHTML = `<div class="card"><h3>Trending Jokes</h3><p class="muted">Top jokes ordered by purchases & likes.</p></div>` +
+        [...localPosts].sort((a,b) => (b.buyers.length || 0) - (a.buyers.length || 0)).map(postTemplate).join("");
+    }
+
+    function renderProfile(v) {
+      v.innerHTML = `
+        <div class="profileBox">
+          <div class="avatar">${currentUser.name[0]}</div>
+          <h2>${currentUser.name}</h2>
+          <div class="handle">${currentUser.handle}</div>
+          
+          <div class="walletBox">
+            <h3>Wallet & Deposit</h3>
+            <p class="muted">Wallet Balance: <b style="color:var(--text);font-size:18px">$${currentUser.balance.toFixed(2)}</b></p>
+            <button class="primary" onclick="openTopup()">Deposit $10 (USDT)</button>
+
+            <div class="card" style="margin-top:15px">
+              <b>Creator Earnings</b>
+              <p class="muted">50% payouts recorded on every joke usage sale.</p>
+              <strong style="color:var(--accent);font-size:20px">$0.00</strong>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function postTemplate(p) {
+      return `
+        <article class="post">
+          <div class="postHead">
+            <span class="user">${p.name} <small class="handle">${p.handle}</small></span>
+            <span class="muted">#${p.id}</span>
+          </div>
+          <div class="content">${escapeHtml(p.text)}</div>
+          <div class="stats">
+            <span>${p.likes || 0} likes</span>
+            <span>${p.buyers ? p.buyers.length : 0} buyers</span>
+          </div>
+          <div class="actions">
+            <button onclick="likePost(${p.id})">♡ Like</button>
+            <button onclick="showBuyers(${p.id})">${p.buyers ? p.buyers.length : 0} Buyers</button>
+            <button class="buy" onclick="buyJoke(${p.id})">$1 Use Joke</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function publishJoke() {
+      const txt = document.getElementById("quick") ? document.getElementById("quick").value.trim() : "";
+      if (!txt) return showToast("Write a joke first!");
+      if (currentUser.balance < 1) return showToast("Balance under $1! Deposit first.");
+
+      currentUser.balance -= 1;
+      const newPost = { id: Date.now() % 10000, name: currentUser.name, handle: currentUser.handle, text: txt, likes: 0, buyers: [] };
+      localPosts.unshift(newPost);
+      
+      if(dbClient) dbClient.from('posts').insert([{ user_handle: currentUser.handle, text: txt }]);
+
+      showToast("Published for $1!");
+      renderView();
+    }
+
+    function buyJoke(id) {
+      const p = localPosts.find(x => x.id === id);
+      if (currentUser.balance < 1) return showToast("Balance under $1! Deposit funds in Profile.");
+      currentUser.balance -= 1;
+      if(!p.buyers) p.buyers = [];
+      p.buyers.push(currentUser.handle);
+      showToast("Rights purchased for $1!");
+      renderView();
+    }
+
+    function likePost(id) {
+      const p = localPosts.find(x => x.id === id);
+      p.likes = (p.likes || 0) + 1;
+      showToast("Liked!");
+      renderView();
+    }
+
+    function openTopup() {
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Deposit Funds ($10 USDT)</h2>
+        <p class="muted">Transfer <b>10 USDT (BSC BEP-20)</b> to your site wallet below:</p>
+        <div class="addr-box">${MY_USDT_WALLETPATH}</div>
+        <p class="muted" style="font-size:12px">Paste your TxHash / Transaction ID after sending:</p>
+        <input id="txhash" placeholder="Enter TxHash here">
+        <button class="primary" style="width:100%" onclick="submitTx()">Submit Deposit</button>
+      `);
+    }
+
+    function submitTx() {
+      const hash = document.getElementById("txhash").value.trim();
+      if(!hash) return showToast("Enter TxHash code!");
+      if(dbClient) dbClient.from('deposits').insert([{ user_handle: currentUser.handle, tx_hash: hash, amount: 10 }]);
+      closeModal();
+      showToast("Submitted! Balance will update after manual verification.");
+    }
+
+    function showBuyers(id) {
+      const p = localPosts.find(x => x.id === id);
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Joke Buyers</h2>
+        ${(p.buyers && p.buyers.length) ? p.buyers.join("<br>") : "<p class='muted'>No buyers yet.</p>"}
+      `);
+    }
+
+    function openPublish() {
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Publish Joke ($1)</h2>
+        <textarea id="modalPublishText" rows="4" placeholder="Write your joke..."></textarea>
+        <button class="primary" style="width:100%" onclick="publishFromModal()">Publish for $1</button>
+      `);
+    }
+
+    function publishFromModal() {
+      const txt = document.getElementById("modalPublishText").value.trim();
+      if(txt) {
+        closeModal();
+        currentUser.balance -= 1;
+        localPosts.unshift({ id: Date.now() % 10000, name: currentUser.name, handle: currentUser.handle, text: txt, likes: 0, buyers: [] });
+        showToast("Published for $1!");
+        renderView();
+      }
+    }
+
+    function showModal(html) { document.getElementById("modalContent").innerHTML = html; document.getElementById("modal").classList.add("show"); }
+    function closeModal() { document.getElementById("modal").classList.remove("show"); }
+    function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2200); }
+    function escapeHtml(s) { return s.replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])); }
+
+    // Init App
+    renderView();
+  </script>
+</body>
+</html>
