@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b0b0c">
+  <title>JEST — Stand-up Comedy Social Marketplace</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Supabase CDN for free database backend -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <!-- Left Sidebar Nav -->
+      <aside class="side">
+        <div class="logo">J<span>!</span></div>
+        <nav id="nav">
+          <button data-page="home" class="active">⌂ Home</button>
+          <button data-page="explore">⌕ Explore</button>
+          <button data-page="profile">◉ Profile</button>
+        </nav>
+        <button class="primary publish-btn" onclick="openPublish()">+ Post Joke ($1)</button>
+      </aside>
+
+      <!-- Main Feed Content -->
+      <main>
+        <div class="top">
+          <div class="title" id="pageTitle">Home</div>
+        </div>
+        <section id="view"></section>
+      </main>
+
+      <!-- Right Sidebar -->
+      <aside class="right">
+        <input class="search" placeholder="Search comedians..." oninput="searchPeople(this.value)">
+        <div class="card">
+          <h3>Comedians</h3>
+          <div id="people"></div>
+        </div>
+        <div class="card">
+          <small class="muted">JEST · Text Comedy Marketplace</small>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Reusable Modal & Toast -->
+  <div class="modal" id="modal"><div class="modalBox" id="modalContent"></div></div>
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts -->
+  <script src="db.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
