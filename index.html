@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="fa" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -21,7 +21,7 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font: 15px/1.55 system-ui, -apple-system, sans-serif;
       padding-bottom: 70px;
     }
 
@@ -75,7 +75,6 @@
     .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .muted { color: var(--muted); }
     .primary { background: var(--accent); color: #080808; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; }
-    .secondary { background: #19191c; color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; }
 
     .post { padding: 16px; margin: 12px 0; }
     .postHead { display: flex; justify-content: space-between; }
@@ -95,7 +94,6 @@
     .buy { color: var(--accent) !important; font-weight: 800; }
 
     .right { position: sticky; top: 15px; height: max-content; margin-top: 15px; }
-    .search { width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; color: var(--text); outline: 0; }
     .card { margin-top: 15px; padding: 15px; }
 
     .profileBox { padding: 20px; margin: 16px 0; }
@@ -136,7 +134,7 @@
     .fab-btn {
       position: fixed;
       bottom: 75px;
-      right: 20px;
+      left: 20px;
       width: 52px;
       height: 52px;
       border-radius: 50%;
@@ -152,10 +150,10 @@
     .modal.show { display: flex; }
     .modalBox { width: min(440px, 100%); padding: 20px; }
     .modalBox input, .modalBox textarea { width: 100%; background: #0d0d0f; color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 11px; margin: 7px 0 12px; outline: 0; }
-    .close { float: right; background: none; border: 0; color: var(--muted); font-size: 22px; }
+    .close { float: left; background: none; border: 0; color: var(--muted); font-size: 22px; }
 
-    .addr-box { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 10px 0; border: 1px dashed var(--accent); color: var(--accent); }
-    .toast { position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); background: #f4f4f5; color: #080808; padding: 9px 16px; border-radius: 999px; display: none; z-index: 30; font-weight: 700; font-size: 13px; }
+    .addr-box { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 10px 0; border: 1px dashed var(--accent); color: var(--accent); direction: ltr; text-align: center; }
+    .toast { position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); background: #f4f4f5; color: #080808; padding: 9px 16px; border-radius: 999px; display: none; z-index: 30; font-weight: 700; font-size: 13px; text-align: center; }
 
     @media(max-width: 768px) {
       .shell { grid-template-columns: 1fr; padding: 0 10px; }
@@ -169,16 +167,15 @@
     <main>
       <header class="top-bar">
         <div class="logo">J<span>!</span></div>
-        <div class="title" id="pageTitle">Home</div>
+        <div class="title" id="pageTitle">خانه</div>
       </header>
       <section id="view"></section>
     </main>
 
     <aside class="right">
-      <input class="search" placeholder="Search comedians...">
       <div class="card">
         <h3>JEST</h3>
-        <small class="muted">Text Comedy Marketplace</small>
+        <small class="muted">شبکه اجتماعی و بازارچه استندآپ و جوک</small>
       </div>
     </aside>
   </div>
@@ -186,15 +183,15 @@
   <nav class="bottom-nav">
     <button onclick="switchTab('home')" id="tab-home" class="active">
       <span class="nav-icon">⌂</span>
-      <span class="nav-label">Home</span>
+      <span class="nav-label">خانه</span>
     </button>
     <button onclick="switchTab('explore')" id="tab-explore">
       <span class="nav-icon">⌕</span>
-      <span class="nav-label">Explore</span>
+      <span class="nav-label">داغ‌ترین‌ها</span>
     </button>
     <button onclick="switchTab('profile')" id="tab-profile">
       <span class="nav-icon">◉</span>
-      <span class="nav-label">Profile</span>
+      <span class="nav-label">پروفایل</span>
     </button>
   </nav>
 
@@ -205,25 +202,38 @@
 
   <script>
     // ----------------------------------------------------
-    // CONFIGURATION
+    // تنظیمات اصلی - لطفاً URL واقعی پروژه‌تان را بگذارید
     // ----------------------------------------------------
     const MY_USDT_WALLETPATH = "0xafa01fc139c8d83bb023b19b6e50d780c13af322"; 
     
-    const SUPABASE_URL = "https://mohammadghadimi88.github.io/JokeGG/"; 
+    // ⚠️ مهم: این آدرس را با Project URL واقعی خود از Supabase جایگزین کنید:
+    const SUPABASE_URL = "https://ajddkfdfpmiwwjsoyluh.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_rV9kfH5v6te1Bp1brgPhDQ_0lES226_"; 
     
-    const dbClient = (window.supabase) ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+    let dbClient = null;
+    try {
+      if (window.supabase && SUPABASE_URL.startsWith("https://")) {
+        dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+    } catch(e) { console.error("Supabase Init Error:", e); }
 
     let currentTab = "home";
-    let currentUser = { name: "Standup Comic", handle: "@comic_user", balance: 10.00 };
+    let currentUser = { name: "کمدین", handle: "@comic_user", balance: 10.00 };
     let fetchedPosts = [];
 
     async function loadPostsFromSupabase() {
       if(!dbClient) return;
-      let { data, error } = await dbClient.from('posts').select('*').order('created_at', { ascending: false });
-      if(!error && data) {
-        fetchedPosts = data;
-        renderView();
+      try {
+        let { data, error } = await dbClient.from('posts').select('*').order('created_at', { ascending: false });
+        if(error) {
+          console.error(error);
+          showToast("خطا در دریافت پست‌ها: " + error.message);
+        } else if(data) {
+          fetchedPosts = data;
+          renderView();
+        }
+      } catch(err) {
+        console.error(err);
       }
     }
 
@@ -233,7 +243,8 @@
       const activeBtn = document.getElementById("tab-" + tab);
       if(activeBtn) activeBtn.classList.add("active");
 
-      document.getElementById("pageTitle").textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
+      const titleMap = { home: "خانه", explore: "داغ‌ترین‌ها", profile: "پروفایل" };
+      document.getElementById("pageTitle").textContent = titleMap[tab] || "JEST";
       renderView();
     }
 
@@ -247,18 +258,18 @@
     function renderFeed(v) {
       v.innerHTML = `
         <div class="composer">
-          <textarea id="quick" placeholder="Type a joke or funny memory..."></textarea>
+          <textarea id="quick" placeholder="یک جوک یا خاطره خنده‌دار بنویس..."></textarea>
           <div class="row">
-            <span class="muted">Publishing costs $1</span>
-            <button class="primary" onclick="publishJoke()">Publish ($1)</button>
+            <span class="muted">هزینه انتشار: ۱ دلار</span>
+            <button class="primary" onclick="publishJoke()">انتشار (۱$)</button>
           </div>
         </div>
-        <div id="postsList">${fetchedPosts.length ? fetchedPosts.map(postTemplate).join("") : '<div class="muted" style="text-align:center;padding:30px">No jokes yet. Post the first one!</div>'}</div>
+        <div id="postsList">${fetchedPosts.length ? fetchedPosts.map(postTemplate).join("") : '<div class="muted" style="text-align:center;padding:30px">هنوز جوکی ثبت نشده! اولین نفر باشید.</div>'}</div>
       `;
     }
 
     function renderExplore(v) {
-      v.innerHTML = `<div class="card"><h3>Trending Jokes</h3><p class="muted">Top jokes ordered by purchases & likes.</p></div>` +
+      v.innerHTML = `<div class="card"><h3>محبوب‌ترین جوک‌ها</h3><p class="muted">بر اساس لایک و خریداری شده‌ها</p></div>` +
         [...fetchedPosts].sort((a,b) => (b.buyers ? b.buyers.length : 0) - (a.buyers ? a.buyers.length : 0)).map(postTemplate).join("");
     }
 
@@ -267,16 +278,16 @@
         <div class="profileBox">
           <div class="avatar">${currentUser.name[0]}</div>
           <h2>${currentUser.name}</h2>
-          <div class="handle">${currentUser.handle}</div>
+          <div class="handle" style="direction:ltr;text-align:right">${currentUser.handle}</div>
           
           <div class="walletBox">
-            <h3>Wallet & Deposit</h3>
-            <p class="muted">Wallet Balance: <b style="color:var(--text);font-size:18px">$${currentUser.balance.toFixed(2)}</b></p>
-            <button class="primary" onclick="openTopup()">Deposit $10 (USDT)</button>
+            <h3>کیف پول و شارژ حساب</h3>
+            <p class="muted">موجودی کیف پول: <b style="color:var(--text);font-size:18px">$${currentUser.balance.toFixed(2)}</b></p>
+            <button class="primary" onclick="openTopup()">افزایش موجودی ۱۰ دلار (USDT)</button>
 
             <div class="card" style="margin-top:15px">
-              <b>Creator Earnings</b>
-              <p class="muted">50% payouts recorded on every joke usage sale.</p>
+              <b>درآمد شما از فروش جوک‌ها</b>
+              <p class="muted">۵۰٪ از هر استفاده کاربر دیگر مستقیماً حساب می‌شود.</p>
               <strong style="color:var(--accent);font-size:20px">$0.00</strong>
             </div>
           </div>
@@ -293,13 +304,13 @@
           </div>
           <div class="content">${escapeHtml(p.text || "")}</div>
           <div class="stats">
-            <span>${p.likes || 0} likes</span>
-            <span>${p.buyers ? p.buyers.length : 0} buyers</span>
+            <span>${p.likes || 0} لایک</span>
+            <span>${p.buyers ? p.buyers.length : 0} خریدار</span>
           </div>
           <div class="actions">
-            <button onclick="likePost(${p.id})">♡ Like</button>
-            <button onclick="showBuyers(${p.id})">${p.buyers ? p.buyers.length : 0} Buyers</button>
-            <button class="buy" onclick="buyJoke(${p.id})">$1 Use Joke</button>
+            <button onclick="likePost(${p.id})">♡ لایک</button>
+            <button onclick="showBuyers(${p.id})">${p.buyers ? p.buyers.length : 0} خریدار</button>
+            <button class="buy" onclick="buyJoke(${p.id})">استفاده (۱$)</button>
           </div>
         </article>
       `;
@@ -307,28 +318,31 @@
 
     async function publishJoke() {
       const txt = document.getElementById("quick") ? document.getElementById("quick").value.trim() : "";
-      if (!txt) return showToast("Write a joke first!");
-      if (currentUser.balance < 1) return showToast("Balance under $1! Deposit first.");
+      if (!txt) return showToast("لطفاً ابتدا جوک را بنویسید!");
+      if (currentUser.balance < 1) return showToast("موجودی کافی نیست! حساب را شارژ کنید.");
 
-      showToast("Publishing to database...");
+      showToast("در حال ثبت در دیتابیس...");
 
       if(dbClient) {
         let { error } = await dbClient.from('posts').insert([{ user_handle: currentUser.handle, text: txt }]);
         if(error) {
-          showToast("Error: " + error.message);
+          showToast("ارور دیتابیس: " + error.message);
           return;
         }
+      } else {
+        showToast("خطا: دیتابیس متصل نیست. لینک Supabase را چک کنید.");
+        return;
       }
 
       currentUser.balance -= 1;
-      showToast("Published for $1!");
+      showToast("جوک با موفقیت منتشر شد!");
       if(document.getElementById("quick")) document.getElementById("quick").value = "";
       loadPostsFromSupabase();
     }
 
     async function buyJoke(id) {
       const p = fetchedPosts.find(x => x.id === id);
-      if (currentUser.balance < 1) return showToast("Balance under $1! Deposit funds in Profile.");
+      if (currentUser.balance < 1) return showToast("موجودی کافی نیست!");
       
       currentUser.balance -= 1;
       let buyers = p.buyers || [];
@@ -338,7 +352,7 @@
         await dbClient.from('posts').update({ buyers: buyers }).eq('id', id);
       }
 
-      showToast("Rights purchased for $1!");
+      showToast("حق استفاده خریداری شد!");
       loadPostsFromSupabase();
     }
 
@@ -350,47 +364,47 @@
         await dbClient.from('posts').update({ likes: newLikes }).eq('id', id);
       }
 
-      showToast("Liked!");
+      showToast("لایک شد!");
       loadPostsFromSupabase();
     }
 
     function openTopup() {
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
-        <h2>Deposit Funds ($10 USDT)</h2>
-        <p class="muted">Transfer <b>10 USDT (BSC BEP-20)</b> to your site wallet below:</p>
+        <h2>شارژ ۱۰ دلاری (USDT)</h2>
+        <p class="muted">مبلغ ۱۰ تتر روی شبکه BSC به آدرس زیر واریز کنید:</p>
         <div class="addr-box">${MY_USDT_WALLETPATH}</div>
-        <p class="muted" style="font-size:12px">Paste your TxHash / Transaction ID after sending:</p>
-        <input id="txhash" placeholder="Enter TxHash here">
-        <button class="primary" style="width:100%" onclick="submitTx()">Submit Deposit</button>
+        <p class="muted" style="font-size:12px">کد تراکنش (TxHash) را پس از واریز وارد کنید:</p>
+        <input id="txhash" placeholder="کد TxHash...">
+        <button class="primary" style="width:100%" onclick="submitTx()">ثبت واریزی</button>
       `);
     }
 
     async function submitTx() {
       const hash = document.getElementById("txhash").value.trim();
-      if(!hash) return showToast("Enter TxHash code!");
+      if(!hash) return showToast("کد تراکنش را وارد کنید!");
       if(dbClient) {
         await dbClient.from('deposits').insert([{ user_handle: currentUser.handle, tx_hash: hash, amount: 10 }]);
       }
       closeModal();
-      showToast("Submitted! Balance will update after verification.");
+      showToast("ثبت شد! پس از تایید توسط مدیریت حساب شارژ می‌شود.");
     }
 
     function showBuyers(id) {
       const p = fetchedPosts.find(x => x.id === id);
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
-        <h2>Joke Buyers</h2>
-        ${(p.buyers && p.buyers.length) ? p.buyers.join("<br>") : "<p class='muted'>No buyers yet.</p>"}
+        <h2>خریداران</h2>
+        ${(p.buyers && p.buyers.length) ? p.buyers.join("<br>") : "<p class='muted'>هنوز خریداری نشده.</p>"}
       `);
     }
 
     function openPublish() {
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
-        <h2>Publish Joke ($1)</h2>
-        <textarea id="modalPublishText" rows="4" placeholder="Write your joke..."></textarea>
-        <button class="primary" style="width:100%" onclick="publishFromModal()">Publish for $1</button>
+        <h2>انتشار جوک (۱ دلار)</h2>
+        <textarea id="modalPublishText" rows="4" placeholder="متن جوک..."></textarea>
+        <button class="primary" style="width:100%" onclick="publishFromModal()">انتشار</button>
       `);
     }
 
@@ -405,10 +419,10 @@
 
     function showModal(html) { document.getElementById("modalContent").innerHTML = html; document.getElementById("modal").classList.add("show"); }
     function closeModal() { document.getElementById("modal").classList.remove("show"); }
-    function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2500); }
+    function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 3000); }
     function escapeHtml(s) { return s.replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])); }
 
-    // Init App & Load Real Database Posts
+    // اجرا و خواندن اطلاعات
     renderView();
     loadPostsFromSupabase();
   </script>
