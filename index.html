@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="theme-color" content="#0b0b0c">
-  <title>JEST — Comedy Social Marketplace</title>
+  <title>JEST — Comedy Social Marketplace (v0.2)</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -86,6 +86,7 @@
     .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .muted { color: var(--muted); }
     .primary { background: var(--accent); color: #080808; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; }
+    .secondary { background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-weight: 600; }
 
     .post { padding: 16px; margin: 12px 0; }
     .postHead { display: flex; justify-content: space-between; }
@@ -164,6 +165,10 @@
     .modalBox input, .modalBox textarea, .modalBox select { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 11px; margin: 7px 0 12px; outline: 0; }
     .close { float: right; background: none; border: 0; color: var(--muted); font-size: 22px; }
 
+    .tab-switch { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+    .tab-switch button { flex: 1; padding: 8px; background: none; border: 0; color: var(--muted); font-weight: 700; }
+    .tab-switch button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
     .addr-box { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 10px 0; border: 1px dashed var(--accent); color: var(--accent); text-align: center; }
     .toast { position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 999px; display: none; z-index: 30; font-weight: 700; font-size: 13px; text-align: center; }
 
@@ -214,13 +219,10 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // ----------------------------------------------------
-    // CONFIGURATION
-    // ----------------------------------------------------
     const MY_USDT_WALLETPATH = "0xafa01fc139c8d83bb023b19b6e50d780c13af322"; 
     
     // REPLACE WITH YOUR ACTUAL SUPABASE URL:
-    const SUPABASE_URL = "https://ajddkfdfpmiwwjsoyluh.supabase.co"; 
+    const SUPABASE_URL = "https://YOUR_ACTUAL_PROJECT_ID.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_rV9kfH5v6te1Bp1brgPhDQ_0lES226_"; 
     
     let dbClient = null;
@@ -230,12 +232,12 @@
       }
     } catch(e) {}
 
-    // State Variables
     let currentTab = "home";
     let currentLang = "en";
     let isLightMode = false;
-    let currentUser = JSON.parse(localStorage.getItem("jest_user")) || { name: "Guest Comic", handle: "@guest", balance: 10.00 };
+    let authMode = "login"; // login or signup
 
+    let currentUser = { name: "Guest Comic", handle: "@guest", balance: 10.00, authenticated: false };
     let fetchedPosts = [];
 
     const dict = {
@@ -243,16 +245,110 @@
         home: "Home", trending: "Trending", profile: "Profile", placeholder: "Type a joke...",
         cost: "Publishing costs $1", publish: "Publish ($1)", noJokes: "No jokes yet!",
         balance: "Wallet Balance", deposit: "Deposit $10 (USDT)", earnings: "Creator Earnings",
-        theme: "Theme", lang: "Language", light: "Light Mode", dark: "Dark Mode", login: "Login / Register"
+        theme: "Theme", lang: "Language", light: "Light Mode", dark: "Dark Mode", login: "Login / Register", logout: "Logout"
       },
       fa: {
         home: "خانه", trending: "داغ‌ترین‌ها", profile: "پروفایل", placeholder: "یک جوک بنویس...",
         cost: "هزینه انتشار: ۱ دلار", publish: "انتشار (۱$)", noJokes: "هنوز جوکی نیست!",
         balance: "موجودی حساب", deposit: "افزایش ۱۰ دلار (USDT)", earnings: "درآمد شما",
-        theme: "تم صفحه", lang: "زبان", light: "روشن (Light)", dark: "تاریک (Dark)", login: "ورود / ثبت نام"
+        theme: "تم صفحه", lang: "زبان", light: "روشن (Light)", dark: "تاریک (Dark)", login: "ورود / ثبت نام", logout: "خروج از حساب"
       }
     };
 
+    // ----------------------------------------------------
+    // AUTHENTICATION LOGIC (Supabase Auth)
+    // ----------------------------------------------------
+    async function checkAuthSession() {
+      if(!dbClient) return;
+      const { data: { session } } = await dbClient.auth.getSession();
+      if(session && session.user) {
+        let { data: profile } = await dbClient.from('profiles').select('*').eq('id', session.user.id).single();
+        if(profile) {
+          currentUser = {
+            id: session.user.id,
+            name: profile.name || "Standup Comic",
+            handle: profile.handle || "@comic",
+            balance: parseFloat(profile.balance || 10.00),
+            authenticated: true
+          };
+        }
+      } else {
+        currentUser = { name: "Guest Comic", handle: "@guest", balance: 10.00, authenticated: false };
+      }
+      renderView();
+    }
+
+    function openAuthModal() {
+      if(currentUser.authenticated) {
+        switchTab('profile');
+        return;
+      }
+      renderAuthModal();
+      document.getElementById("modal").classList.add("show");
+    }
+
+    function renderAuthModal() {
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <div class="tab-switch">
+          <button class="${authMode === 'login' ? 'active' : ''}" onclick="switchAuthMode('login')">Login</button>
+          <button class="${authMode === 'signup' ? 'active' : ''}" onclick="switchAuthMode('signup')">Sign Up</button>
+        </div>
+        ${authMode === 'signup' ? '<input id="authName" placeholder="Full Name (e.g. Alex)"><input id="authHandle" placeholder="Handle (e.g. @alex_comic)">' : ''}
+        <input id="authEmail" type="email" placeholder="Email Address">
+        <input id="authPassword" type="password" placeholder="Password (min 6 chars)">
+        <button class="primary" style="width:100%" onclick="handleAuthSubmit()">${authMode === 'login' ? 'Login' : 'Create Account'}</button>
+      `);
+    }
+
+    function switchAuthMode(mode) {
+      authMode = mode;
+      renderAuthModal();
+    }
+
+    async function handleAuthSubmit() {
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value.trim();
+
+      if(!email || !password) return showToast("Please enter email and password!");
+      if(!dbClient) return showToast("Database connection missing!");
+
+      if(authMode === 'signup') {
+        const name = document.getElementById("authName").value.trim();
+        let handle = document.getElementById("authHandle").value.trim();
+        if(!handle.startsWith("@")) handle = "@" + handle;
+
+        showToast("Creating account...");
+        let { data, error } = await dbClient.auth.signUp({ email, password });
+        if(error) return showToast("Signup Error: " + error.message);
+
+        if(data.user) {
+          await dbClient.from('profiles').insert([{ id: data.user.id, name, handle, balance: 10.00 }]);
+          showToast("Account created successfully!");
+          await checkAuthSession();
+          closeModal();
+        }
+      } else {
+        showToast("Logging in...");
+        let { data, error } = await dbClient.auth.signInWithPassword({ email, password });
+        if(error) return showToast("Login Error: " + error.message);
+
+        showToast("Logged in!");
+        await checkAuthSession();
+        closeModal();
+      }
+    }
+
+    async function logout() {
+      if(dbClient) await dbClient.auth.signOut();
+      currentUser = { name: "Guest Comic", handle: "@guest", balance: 10.00, authenticated: false };
+      showToast("Logged out!");
+      renderView();
+    }
+
+    // ----------------------------------------------------
+    // APP CORE
+    // ----------------------------------------------------
     async function loadPostsFromSupabase() {
       if(!dbClient) return;
       try {
@@ -276,7 +372,7 @@
 
     function renderView() {
       const view = document.getElementById("view");
-      document.getElementById("authBtn").textContent = currentUser.handle !== "@guest" ? currentUser.handle : dict[currentLang].login;
+      document.getElementById("authBtn").textContent = currentUser.authenticated ? currentUser.handle : dict[currentLang].login;
 
       if (currentTab === "profile") return renderProfile(view);
       if (currentTab === "explore") return renderExplore(view);
@@ -327,6 +423,7 @@
                 <option value="fa" ${currentLang==='fa'?'selected':''}>فارسی</option>
               </select>
             </div>
+            ${currentUser.authenticated ? `<button class="secondary" style="width:100%;margin-top:15px;color:#ff5555" onclick="logout()">${t.logout}</button>` : `<button class="primary" style="width:100%;margin-top:15px" onclick="openAuthModal()">${t.login}</button>`}
           </div>
         </div>
       `;
@@ -354,6 +451,7 @@
     }
 
     async function publishJoke() {
+      if(!currentUser.authenticated) return openAuthModal();
       const txt = document.getElementById("quick") ? document.getElementById("quick").value.trim() : "";
       if (!txt) return showToast("Write a joke first!");
       if (currentUser.balance < 1) return showToast("Balance under $1! Deposit first.");
@@ -363,25 +461,29 @@
       if(dbClient) {
         let { error } = await dbClient.from('posts').insert([{ user_handle: currentUser.handle, text: txt }]);
         if(error) return showToast("Error: " + error.message);
+        
+        currentUser.balance -= 1;
+        await dbClient.from('profiles').update({ balance: currentUser.balance }).eq('id', currentUser.id);
       }
 
-      currentUser.balance -= 1;
-      saveUserLocally();
       showToast("Published for $1!");
       if(document.getElementById("quick")) document.getElementById("quick").value = "";
       loadPostsFromSupabase();
     }
 
     async function buyJoke(id) {
+      if(!currentUser.authenticated) return openAuthModal();
       const p = fetchedPosts.find(x => x.id === id);
       if (currentUser.balance < 1) return showToast("Balance under $1!");
       
       currentUser.balance -= 1;
-      saveUserLocally();
       let buyers = p.buyers || [];
       buyers.push(currentUser.handle);
 
-      if(dbClient) await dbClient.from('posts').update({ buyers: buyers }).eq('id', id);
+      if(dbClient) {
+        await dbClient.from('posts').update({ buyers: buyers }).eq('id', id);
+        await dbClient.from('profiles').update({ balance: currentUser.balance }).eq('id', currentUser.id);
+      }
 
       showToast("Purchased!");
       loadPostsFromSupabase();
@@ -393,31 +495,6 @@
       if(dbClient) await dbClient.from('posts').update({ likes: newLikes }).eq('id', id);
       showToast("Liked!");
       loadPostsFromSupabase();
-    }
-
-    function openAuthModal() {
-      showModal(`
-        <button class="close" onclick="closeModal()">×</button>
-        <h2>${dict[currentLang].login}</h2>
-        <input id="authName" placeholder="Your Display Name (e.g. Alex)" value="${currentUser.name}">
-        <input id="authHandle" placeholder="Your @handle (e.g. @alex_comic)" value="${currentUser.handle}">
-        <button class="primary" style="width:100%" onclick="saveAuth()">Save / Login</button>
-      `);
-    }
-
-    function saveAuth() {
-      const name = document.getElementById("authName").value.trim();
-      let handle = document.getElementById("authHandle").value.trim();
-      if(!handle.startsWith("@")) handle = "@" + handle;
-
-      if(name && handle) {
-        currentUser.name = name;
-        currentUser.handle = handle;
-        saveUserLocally();
-        closeModal();
-        renderView();
-        showToast("Logged in as " + handle);
-      }
     }
 
     function toggleTheme() {
@@ -436,6 +513,7 @@
     }
 
     function openTopup() {
+      if(!currentUser.authenticated) return openAuthModal();
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
         <h2>Deposit ($10 USDT)</h2>
@@ -464,6 +542,7 @@
     }
 
     function openPublish() {
+      if(!currentUser.authenticated) return openAuthModal();
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
         <h2>Publish Joke ($1)</h2>
@@ -481,13 +560,13 @@
       }
     }
 
-    function saveUserLocally() { localStorage.setItem("jest_user", JSON.stringify(currentUser)); }
     function showModal(html) { document.getElementById("modalContent").innerHTML = html; document.getElementById("modal").classList.add("show"); }
     function closeModal() { document.getElementById("modal").classList.remove("show"); }
     function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2500); }
     function escapeHtml(s) { return s.replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])); }
 
-    renderView();
+    // Init App
+    checkAuthSession();
     loadPostsFromSupabase();
   </script>
 </body>
