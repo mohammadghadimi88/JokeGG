@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="theme-color" content="#0b0b0c">
-  <title>JEST — Comedy Social Marketplace (v0.2)</title>
+  <title>JEST — Comedy Social Marketplace v0.5 (Web3 & Financial)</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <style>
     :root {
       --bg: #0b0b0c;
@@ -65,6 +66,26 @@
     .logo span { color: var(--accent); }
     .title { font-size: 19px; font-weight: 800; }
 
+    .feed-tabs {
+      display: flex;
+      gap: 15px;
+      margin: 10px 0;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+    .feed-tab {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .feed-tab.active {
+      color: var(--text);
+      background: var(--line);
+    }
+
     .composer, .post, .profileBox, .modalBox, .card {
       border: 1px solid var(--line);
       background: var(--card);
@@ -86,11 +107,12 @@
     .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .muted { color: var(--muted); }
     .primary { background: var(--accent); color: #080808; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; }
-    .secondary { background: transparent; color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font-weight: 600; }
+    .secondary { background: var(--line); color: var(--text); border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; }
 
     .post { padding: 16px; margin: 12px 0; }
-    .postHead { display: flex; justify-content: space-between; }
-    .user { font-weight: 800; }
+    .postHead { display: flex; justify-content: space-between; align-items: center; }
+    .user { font-weight: 800; cursor: pointer; }
+    .user:hover { text-decoration: underline; color: var(--accent); }
     .handle { color: var(--muted); font-weight: 500; }
     .content { font-size: 16px; white-space: pre-wrap; margin: 12px 0; }
     .stats { display: flex; gap: 18px; color: var(--muted); font-size: 13px; }
@@ -102,14 +124,15 @@
       padding-top: 10px;
       border-top: 1px solid var(--line);
     }
-    .actions button { background: none; border: 0; color: var(--muted); }
+    .actions button { background: none; border: 0; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+    .actions button:hover { color: var(--text); }
     .buy { color: var(--accent) !important; font-weight: 800; }
 
     .right { position: sticky; top: 15px; height: max-content; margin-top: 15px; }
     .card { margin-top: 15px; padding: 15px; }
 
     .profileBox { padding: 20px; margin: 16px 0; }
-    .avatar { width: 56px; height: 56px; border-radius: 50%; background: #202024; color:#fff; display: grid; place-items: center; font-weight: 900; font-size: 20px; }
+    .avatar { width: 56px; height: 56px; border-radius: 50%; background: #202024; color:#fff; display: grid; place-items: center; font-weight: 900; font-size: 20px; background-position: center; background-size: cover; }
     .walletBox { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 
     .bottom-nav {
@@ -161,16 +184,20 @@
 
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
     .modal.show { display: flex; }
-    .modalBox { width: min(440px, 100%); padding: 20px; }
+    .modalBox { width: min(480px, 100%); padding: 20px; max-height: 85vh; overflow-y: auto; }
     .modalBox input, .modalBox textarea, .modalBox select { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 11px; margin: 7px 0 12px; outline: 0; }
     .close { float: right; background: none; border: 0; color: var(--muted); font-size: 22px; }
 
-    .tab-switch { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
-    .tab-switch button { flex: 1; padding: 8px; background: none; border: 0; color: var(--muted); font-weight: 700; }
-    .tab-switch button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+    .share-btns { display: flex; gap: 10px; margin-top: 15px; }
+    .share-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font-weight: 700; text-align: center; text-decoration: none; }
+
+    .comment-item { padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .comment-item:last-child { border: 0; }
 
     .addr-box { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 10px 0; border: 1px dashed var(--accent); color: var(--accent); text-align: center; }
     .toast { position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 999px; display: none; z-index: 30; font-weight: 700; font-size: 13px; text-align: center; }
+
+    .web3-badge { background: rgba(232, 255, 79, 0.15); color: var(--accent); border: 1px solid var(--accent); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
 
     @media(max-width: 768px) {
       .shell { grid-template-columns: 1fr; padding: 0 10px; }
@@ -193,7 +220,7 @@
     <aside class="right">
       <div class="card">
         <h3>JEST</h3>
-        <small class="muted">Text Comedy Marketplace</small>
+        <small class="muted">Text Comedy Marketplace v0.5</small>
       </div>
     </aside>
   </div>
@@ -219,10 +246,9 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // CONFIGURATION
     const MY_USDT_WALLETPATH = "0xafa01fc139c8d83bb023b19b6e50d780c13af322"; 
-    
-    // REPLACE WITH YOUR ACTUAL SUPABASE URL:
-    const SUPABASE_URL = "https://YOUR_ACTUAL_PROJECT_ID.supabase.co"; 
+    const SUPABASE_URL = "https://ajddkfdfpmiwwjsoyluh.supabase.co"; 
     const SUPABASE_KEY = "sb_publishable_rV9kfH5v6te1Bp1brgPhDQ_0lES226_"; 
     
     let dbClient = null;
@@ -232,123 +258,50 @@
       }
     } catch(e) {}
 
+    // State
     let currentTab = "home";
+    let feedFilter = "all";
     let currentLang = "en";
     let isLightMode = false;
-    let authMode = "login"; // login or signup
+    let connectedWallet = null;
 
-    let currentUser = { name: "Guest Comic", handle: "@guest", balance: 10.00, authenticated: false };
+    let currentUser = JSON.parse(localStorage.getItem("jest_user")) || { 
+      name: "Guest Comic", 
+      handle: "@guest", 
+      balance: 10.00, 
+      avatar: "", 
+      bio: "", 
+      following: [], 
+      vipSubscriptions: [], 
+      wallet: null 
+    };
+
+    if (!currentUser.following) currentUser.following = [];
+    if (!currentUser.vipSubscriptions) currentUser.vipSubscriptions = [];
+
     let fetchedPosts = [];
 
     const dict = {
       en: {
         home: "Home", trending: "Trending", profile: "Profile", placeholder: "Type a joke...",
         cost: "Publishing costs $1", publish: "Publish ($1)", noJokes: "No jokes yet!",
-        balance: "Wallet Balance", deposit: "Deposit $10 (USDT)", earnings: "Creator Earnings",
-        theme: "Theme", lang: "Language", light: "Light Mode", dark: "Dark Mode", login: "Login / Register", logout: "Logout"
+        balance: "Wallet Balance", deposit: "Deposit $10 (USDT)", withdraw: "Withdraw Funds 💸", theme: "Theme", lang: "Language",
+        light: "Light Mode", dark: "Dark Mode", login: "Login / Register",
+        editProfile: "Edit Profile ✏️", editBioPlaceholder: "Short Bio...", avatarUrl: "Avatar Image URL", save: "Save",
+        all: "All Jokes", following: "Following", follow: "Follow", unfollow: "Unfollow", comments: "Comments", share: "Share",
+        connectWallet: "Connect Web3 Wallet 🦊", walletConnected: "Wallet Connected", vipPass: "Get VIP Sub ($5/mo)"
       },
       fa: {
         home: "خانه", trending: "داغ‌ترین‌ها", profile: "پروفایل", placeholder: "یک جوک بنویس...",
         cost: "هزینه انتشار: ۱ دلار", publish: "انتشار (۱$)", noJokes: "هنوز جوکی نیست!",
-        balance: "موجودی حساب", deposit: "افزایش ۱۰ دلار (USDT)", earnings: "درآمد شما",
-        theme: "تم صفحه", lang: "زبان", light: "روشن (Light)", dark: "تاریک (Dark)", login: "ورود / ثبت نام", logout: "خروج از حساب"
+        balance: "موجودی حساب", deposit: "افزایش ۱۰ دلار (USDT)", withdraw: "تسویه‌حساب / برداشت 💸", theme: "تم صفحه", lang: "زبان",
+        light: "روشن", dark: "تاریک", login: "ورود / ثبت نام",
+        editProfile: "ویرایش پروفایل ✏️", editBioPlaceholder: "بیوگرافی کوتاه...", avatarUrl: "لینک عکس آواتار", save: "ذخیره",
+        all: "همه جوک‌ها", following: "دنبال‌شده‌ها", follow: "دنبال کردن", unfollow: "آنفالو", comments: "نظرات", share: "اشتراک",
+        connectWallet: "اتصال کیف‌پول وب۳ 🦊", walletConnected: "کیف‌پول متصل شد", vipPass: "اشتراک ماهانه ($5)"
       }
     };
 
-    // ----------------------------------------------------
-    // AUTHENTICATION LOGIC (Supabase Auth)
-    // ----------------------------------------------------
-    async function checkAuthSession() {
-      if(!dbClient) return;
-      const { data: { session } } = await dbClient.auth.getSession();
-      if(session && session.user) {
-        let { data: profile } = await dbClient.from('profiles').select('*').eq('id', session.user.id).single();
-        if(profile) {
-          currentUser = {
-            id: session.user.id,
-            name: profile.name || "Standup Comic",
-            handle: profile.handle || "@comic",
-            balance: parseFloat(profile.balance || 10.00),
-            authenticated: true
-          };
-        }
-      } else {
-        currentUser = { name: "Guest Comic", handle: "@guest", balance: 10.00, authenticated: false };
-      }
-      renderView();
-    }
-
-    function openAuthModal() {
-      if(currentUser.authenticated) {
-        switchTab('profile');
-        return;
-      }
-      renderAuthModal();
-      document.getElementById("modal").classList.add("show");
-    }
-
-    function renderAuthModal() {
-      showModal(`
-        <button class="close" onclick="closeModal()">×</button>
-        <div class="tab-switch">
-          <button class="${authMode === 'login' ? 'active' : ''}" onclick="switchAuthMode('login')">Login</button>
-          <button class="${authMode === 'signup' ? 'active' : ''}" onclick="switchAuthMode('signup')">Sign Up</button>
-        </div>
-        ${authMode === 'signup' ? '<input id="authName" placeholder="Full Name (e.g. Alex)"><input id="authHandle" placeholder="Handle (e.g. @alex_comic)">' : ''}
-        <input id="authEmail" type="email" placeholder="Email Address">
-        <input id="authPassword" type="password" placeholder="Password (min 6 chars)">
-        <button class="primary" style="width:100%" onclick="handleAuthSubmit()">${authMode === 'login' ? 'Login' : 'Create Account'}</button>
-      `);
-    }
-
-    function switchAuthMode(mode) {
-      authMode = mode;
-      renderAuthModal();
-    }
-
-    async function handleAuthSubmit() {
-      const email = document.getElementById("authEmail").value.trim();
-      const password = document.getElementById("authPassword").value.trim();
-
-      if(!email || !password) return showToast("Please enter email and password!");
-      if(!dbClient) return showToast("Database connection missing!");
-
-      if(authMode === 'signup') {
-        const name = document.getElementById("authName").value.trim();
-        let handle = document.getElementById("authHandle").value.trim();
-        if(!handle.startsWith("@")) handle = "@" + handle;
-
-        showToast("Creating account...");
-        let { data, error } = await dbClient.auth.signUp({ email, password });
-        if(error) return showToast("Signup Error: " + error.message);
-
-        if(data.user) {
-          await dbClient.from('profiles').insert([{ id: data.user.id, name, handle, balance: 10.00 }]);
-          showToast("Account created successfully!");
-          await checkAuthSession();
-          closeModal();
-        }
-      } else {
-        showToast("Logging in...");
-        let { data, error } = await dbClient.auth.signInWithPassword({ email, password });
-        if(error) return showToast("Login Error: " + error.message);
-
-        showToast("Logged in!");
-        await checkAuthSession();
-        closeModal();
-      }
-    }
-
-    async function logout() {
-      if(dbClient) await dbClient.auth.signOut();
-      currentUser = { name: "Guest Comic", handle: "@guest", balance: 10.00, authenticated: false };
-      showToast("Logged out!");
-      renderView();
-    }
-
-    // ----------------------------------------------------
-    // APP CORE
-    // ----------------------------------------------------
     async function loadPostsFromSupabase() {
       if(!dbClient) return;
       try {
@@ -370,9 +323,14 @@
       renderView();
     }
 
+    function setFeedFilter(filter) {
+      feedFilter = filter;
+      renderView();
+    }
+
     function renderView() {
       const view = document.getElementById("view");
-      document.getElementById("authBtn").textContent = currentUser.authenticated ? currentUser.handle : dict[currentLang].login;
+      document.getElementById("authBtn").textContent = currentUser.handle !== "@guest" ? currentUser.handle : dict[currentLang].login;
 
       if (currentTab === "profile") return renderProfile(view);
       if (currentTab === "explore") return renderExplore(view);
@@ -381,6 +339,12 @@
 
     function renderFeed(v) {
       const t = dict[currentLang];
+      let postsToDisplay = fetchedPosts;
+
+      if (feedFilter === "following") {
+        postsToDisplay = fetchedPosts.filter(p => currentUser.following.includes(p.user_handle));
+      }
+
       v.innerHTML = `
         <div class="composer">
           <textarea id="quick" placeholder="${t.placeholder}"></textarea>
@@ -389,7 +353,13 @@
             <button class="primary" onclick="publishJoke()">${t.publish}</button>
           </div>
         </div>
-        <div id="postsList">${fetchedPosts.length ? fetchedPosts.map(postTemplate).join("") : `<div class="muted" style="text-align:center;padding:30px">${t.noJokes}</div>`}</div>
+
+        <div class="feed-tabs">
+          <button class="feed-tab ${feedFilter==='all'?'active':''}" onclick="setFeedFilter('all')">${t.all}</button>
+          <button class="feed-tab ${feedFilter==='following'?'active':''}" onclick="setFeedFilter('following')">${t.following} (${currentUser.following.length})</button>
+        </div>
+
+        <div id="postsList">${postsToDisplay.length ? postsToDisplay.map(postTemplate).join("") : `<div class="muted" style="text-align:center;padding:30px">${t.noJokes}</div>`}</div>
       `;
     }
 
@@ -399,15 +369,32 @@
 
     function renderProfile(v) {
       const t = dict[currentLang];
+      const myPosts = fetchedPosts.filter(p => p.user_handle === currentUser.handle);
+
       v.innerHTML = `
         <div class="profileBox">
-          <div class="avatar">${currentUser.name[0]}</div>
-          <h2>${currentUser.name}</h2>
-          <div class="handle">${currentUser.handle}</div>
+          <div style="display:flex; align-items:center; gap:15px; margin-bottom:12px;">
+            <div class="avatar" style="${currentUser.avatar ? `background-image:url('${currentUser.avatar}');` : ''}">
+              ${currentUser.avatar ? '' : (currentUser.name ? currentUser.name[0] : 'J')}
+            </div>
+            <div>
+              <h2 style="margin:0">${currentUser.name}</h2>
+              <div class="handle">${currentUser.handle}</div>
+              ${currentUser.wallet ? `<span class="web3-badge">🦊 ${currentUser.wallet.substring(0,6)}...${currentUser.wallet.slice(-4)}</span>` : ''}
+            </div>
+          </div>
           
+          <p class="muted" style="margin:8px 0 14px 0; font-size:14px; white-space:pre-wrap;">${currentUser.bio || "No bio yet."}</p>
+
+          <button class="primary" style="width:100%; margin: 5px 0 10px 0; background:var(--line); color:var(--text);" onclick="openEditProfile()">${t.editProfile}</button>
+          ${!currentUser.wallet ? `<button class="primary" style="width:100%; margin-bottom:15px; background:#e8ff4f; color:#000;" onclick="connectWeb3Wallet()">${t.connectWallet}</button>` : ''}
+
           <div class="walletBox">
             <h3>${t.balance}: <b style="color:var(--text);font-size:18px">$${currentUser.balance.toFixed(2)}</b></h3>
-            <button class="primary" onclick="openTopup()">${t.deposit}</button>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+              <button class="primary" style="flex:1" onclick="openTopup()">${t.deposit}</button>
+              <button class="secondary" style="flex:1" onclick="openWithdrawModal()">${t.withdraw}</button>
+            </div>
           </div>
 
           <div class="walletBox">
@@ -423,35 +410,256 @@
                 <option value="fa" ${currentLang==='fa'?'selected':''}>فارسی</option>
               </select>
             </div>
-            ${currentUser.authenticated ? `<button class="secondary" style="width:100%;margin-top:15px;color:#ff5555" onclick="logout()">${t.logout}</button>` : `<button class="primary" style="width:100%;margin-top:15px" onclick="openAuthModal()">${t.login}</button>`}
           </div>
         </div>
+
+        <h3 style="margin-top:20px;">My Jokes (${myPosts.length})</h3>
+        ${myPosts.length ? myPosts.map(postTemplate).join("") : `<div class="muted" style="padding:15px">You haven't posted any jokes yet.</div>`}
       `;
     }
 
     function postTemplate(p) {
+      const t = dict[currentLang];
+      const commentCount = p.comments ? p.comments.length : 0;
       return `
         <article class="post">
           <div class="postHead">
-            <span class="user">${p.user_handle || "@anonymous"}</span>
+            <span class="user" onclick="viewComedianProfile('${p.user_handle}')">${p.user_handle || "@anonymous"}</span>
             <span class="muted">#${p.id}</span>
           </div>
           <div class="content">${escapeHtml(p.text || "")}</div>
           <div class="stats">
             <span>${p.likes || 0} Likes</span>
+            <span>${commentCount} Comments</span>
             <span>${p.buyers ? p.buyers.length : 0} Buyers</span>
           </div>
           <div class="actions">
             <button onclick="likePost(${p.id})">♡ Like</button>
-            <button onclick="showBuyers(${p.id})">${p.buyers ? p.buyers.length : 0} Buyers</button>
+            <button onclick="openComments(${p.id})">💬 ${t.comments}</button>
+            <button onclick="openShareModal(${p.id})">↗ ${t.share}</button>
             <button class="buy" onclick="buyJoke(${p.id})">$1 Use</button>
           </div>
         </article>
       `;
     }
 
+    // --- WEB3 INTEGRATION ---
+    async function connectWeb3Wallet() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
+          const signer = provider.getSigner();
+          const address = await signer.getAddress();
+          
+          currentUser.wallet = address;
+          if (currentUser.handle === "@guest") {
+            currentUser.handle = "@" + address.substring(0, 6).toLowerCase();
+            currentUser.name = "Web3 Comic";
+          }
+          saveUserLocally();
+          showToast("Wallet Connected: " + address.substring(0, 6) + "...");
+          renderView();
+          if (document.getElementById("modal").classList.contains("show")) closeModal();
+        } catch (err) {
+          showToast("Wallet connection failed!");
+        }
+      } else {
+        showToast("Please install MetaMask or Trust Wallet!");
+      }
+    }
+
+    // --- WITHDRAWAL SYSTEM ---
+    function openWithdrawModal() {
+      const t = dict[currentLang];
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Request Withdrawal</h2>
+        <p class="muted">Available Balance: <b>$${currentUser.balance.toFixed(2)}</b></p>
+        <input id="withdrawAddress" placeholder="BEP-20 USDT Wallet Address" value="${currentUser.wallet || ''}">
+        <input id="withdrawAmount" type="number" placeholder="Amount ($)" min="1" max="${currentUser.balance}">
+        <button class="primary" style="width:100%" onclick="submitWithdrawal()">Submit Request</button>
+      `);
+    }
+
+    async function submitWithdrawal() {
+      const address = document.getElementById("withdrawAddress").value.trim();
+      const amount = parseFloat(document.getElementById("withdrawAmount").value);
+
+      if (!address || isNaN(amount) || amount <= 0) return showToast("Enter valid details!");
+      if (amount > currentUser.balance) return showToast("Insufficient balance!");
+
+      if (dbClient) {
+        showToast("Submitting request...");
+        const { error } = await dbClient.from('withdrawals').insert([{
+          user_handle: currentUser.handle,
+          wallet_address: address,
+          amount: amount
+        }]);
+
+        if (error) return showToast("Error submitting request!");
+      }
+
+      currentUser.balance -= amount;
+      saveUserLocally();
+      closeModal();
+      renderView();
+      showToast("Withdrawal requested successfully!");
+    }
+
+    // --- COMEDIAN DEDICATED PROFILE & VIP SUBSCRIPTION ---
+    function viewComedianProfile(handle) {
+      const t = dict[currentLang];
+      const comedianPosts = fetchedPosts.filter(p => p.user_handle === handle);
+      const isFollowing = currentUser.following.includes(handle);
+      const isVip = currentUser.vipSubscriptions.includes(handle);
+
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+          <div class="avatar">${handle[1] ? handle[1].toUpperCase() : 'C'}</div>
+          <div>
+            <h2 style="margin:0">${handle}</h2>
+            <span class="muted">${comedianPosts.length} Jokes Published</span>
+            ${isVip ? '<span class="web3-badge" style="margin-left:5px;">VIP Subscribed ⭐</span>' : ''}
+          </div>
+        </div>
+        ${handle !== currentUser.handle ? `
+          <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <button class="primary" style="flex:1; background:${isFollowing ? 'var(--line)' : 'var(--accent)'}; color:${isFollowing ? 'var(--text)' : '#000'};" onclick="toggleFollow('${handle}')">
+              ${isFollowing ? t.unfollow : t.follow}
+            </button>
+            ${!isVip ? `<button class="primary" style="flex:1; background:#00d26a; color:#fff;" onclick="buyVipSubscription('${handle}')">${t.vipPass}</button>` : ''}
+          </div>
+        ` : ''}
+        <h3>Jokes</h3>
+        <div style="max-height: 45vh; overflow-y: auto;">
+          ${comedianPosts.length ? comedianPosts.map(postTemplate).join("") : "<p class='muted'>No jokes by this comedian yet.</p>"}
+        </div>
+      `);
+    }
+
+    function buyVipSubscription(handle) {
+      if (currentUser.balance < 5) return showToast("Balance under $5 for VIP!");
+      currentUser.balance -= 5;
+      currentUser.vipSubscriptions.push(handle);
+      saveUserLocally();
+      showToast("Subscribed VIP to " + handle + "!");
+      closeModal();
+      renderView();
+    }
+
+    function toggleFollow(handle) {
+      if (currentUser.following.includes(handle)) {
+        currentUser.following = currentUser.following.filter(h => h !== handle);
+        showToast("Unfollowed " + handle);
+      } else {
+        currentUser.following.push(handle);
+        showToast("Following " + handle);
+      }
+      saveUserLocally();
+      closeModal();
+      renderView();
+    }
+
+    // --- COMMENTS SYSTEM ---
+    function openComments(postId) {
+      const p = fetchedPosts.find(x => x.id === postId);
+      const comments = p.comments || [];
+
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Comments</h2>
+        <div style="max-height:40vh; overflow-y:auto; margin-bottom:15px;" id="commentsContainer">
+          ${comments.length ? comments.map(c => `
+            <div class="comment-item">
+              <b style="color:var(--accent); font-size:13px">${escapeHtml(c.user)}</b>
+              <div style="font-size:14px; margin-top:2px;">${escapeHtml(c.text)}</div>
+            </div>
+          `).join('') : '<p class="muted">No comments yet. Be the first!</p>'}
+        </div>
+        <textarea id="newCommentText" placeholder="Write a comment..." rows="2"></textarea>
+        <button class="primary" style="width:100%" onclick="addComment(${postId})">Post Comment</button>
+      `);
+    }
+
+    async function addComment(postId) {
+      const txt = document.getElementById("newCommentText").value.trim();
+      if (!txt) return showToast("Write a comment first!");
+
+      const p = fetchedPosts.find(x => x.id === postId);
+      let comments = p.comments || [];
+      comments.push({ user: currentUser.handle, text: txt, created_at: new Date() });
+
+      if (dbClient) {
+        await dbClient.from('posts').update({ comments: comments }).eq('id', postId);
+      }
+
+      showToast("Comment added!");
+      closeModal();
+      loadPostsFromSupabase();
+    }
+
+    // --- SHARE SYSTEM ---
+    function openShareModal(postId) {
+      const p = fetchedPosts.find(x => x.id === postId);
+      const shareUrl = window.location.href;
+      const shareText = `Check out this joke on JEST: "${p.text.substring(0, 50)}..."`;
+
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Share Joke</h2>
+        <p class="muted">${escapeHtml(p.text)}</p>
+        <div class="share-btns">
+          <a class="share-btn" href="https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}" target="_blank">Telegram</a>
+          <a class="share-btn" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}" target="_blank">X (Twitter)</a>
+          <a class="share-btn" href="https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}" target="_blank">WhatsApp</a>
+        </div>
+      `);
+    }
+
+    // --- CORE & AUTH FUNCTIONS ---
+    function openEditProfile() {
+      const t = dict[currentLang];
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>${t.editProfile}</h2>
+        <input id="editName" placeholder="Display Name" value="${currentUser.name}">
+        <input id="editAvatar" placeholder="${t.avatarUrl}" value="${currentUser.avatar || ''}">
+        <textarea id="editBio" placeholder="${t.editBioPlaceholder}" style="width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:10px; padding:10px; margin:7px 0 12px;">${currentUser.bio || ''}</textarea>
+        <button class="primary" style="width:100%" onclick="saveProfileChanges()">${t.save}</button>
+      `);
+    }
+
+    async function saveProfileChanges() {
+      const name = document.getElementById("editName").value.trim();
+      const avatar = document.getElementById("editAvatar").value.trim();
+      const bio = document.getElementById("editBio").value.trim();
+
+      if(name) {
+        currentUser.name = name;
+        currentUser.avatar = avatar;
+        currentUser.bio = bio;
+        
+        saveUserLocally();
+        
+        if(dbClient && currentUser.handle !== "@guest") {
+          await dbClient.from('profiles').upsert({
+            user_handle: currentUser.handle,
+            display_name: name,
+            avatar_url: avatar,
+            bio: bio,
+            updated_at: new Date()
+          });
+        }
+
+        closeModal();
+        renderView();
+        showToast("Profile updated!");
+      }
+    }
+
     async function publishJoke() {
-      if(!currentUser.authenticated) return openAuthModal();
       const txt = document.getElementById("quick") ? document.getElementById("quick").value.trim() : "";
       if (!txt) return showToast("Write a joke first!");
       if (currentUser.balance < 1) return showToast("Balance under $1! Deposit first.");
@@ -459,31 +667,27 @@
       showToast("Publishing...");
 
       if(dbClient) {
-        let { error } = await dbClient.from('posts').insert([{ user_handle: currentUser.handle, text: txt }]);
+        let { error } = await dbClient.from('posts').insert([{ user_handle: currentUser.handle, text: txt, comments: [] }]);
         if(error) return showToast("Error: " + error.message);
-        
-        currentUser.balance -= 1;
-        await dbClient.from('profiles').update({ balance: currentUser.balance }).eq('id', currentUser.id);
       }
 
+      currentUser.balance -= 1;
+      saveUserLocally();
       showToast("Published for $1!");
       if(document.getElementById("quick")) document.getElementById("quick").value = "";
       loadPostsFromSupabase();
     }
 
     async function buyJoke(id) {
-      if(!currentUser.authenticated) return openAuthModal();
       const p = fetchedPosts.find(x => x.id === id);
       if (currentUser.balance < 1) return showToast("Balance under $1!");
       
       currentUser.balance -= 1;
+      saveUserLocally();
       let buyers = p.buyers || [];
       buyers.push(currentUser.handle);
 
-      if(dbClient) {
-        await dbClient.from('posts').update({ buyers: buyers }).eq('id', id);
-        await dbClient.from('profiles').update({ balance: currentUser.balance }).eq('id', currentUser.id);
-      }
+      if(dbClient) await dbClient.from('posts').update({ buyers: buyers }).eq('id', id);
 
       showToast("Purchased!");
       loadPostsFromSupabase();
@@ -495,6 +699,62 @@
       if(dbClient) await dbClient.from('posts').update({ likes: newLikes }).eq('id', id);
       showToast("Liked!");
       loadPostsFromSupabase();
+    }
+
+    function openAuthModal() {
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>${dict[currentLang].login}</h2>
+        <button class="primary" style="width:100%; margin-bottom:15px; background:#e8ff4f; color:#000;" onclick="connectWeb3Wallet()">${dict[currentLang].connectWallet}</button>
+        <p class="muted" style="text-align:center; margin:10px 0;">— OR —</p>
+        <input id="authEmail" type="email" placeholder="Email Address">
+        <input id="authPassword" type="password" placeholder="Password">
+        <input id="authName" placeholder="Your Display Name (e.g. Alex)" value="${currentUser.name}">
+        <input id="authHandle" placeholder="Your @handle (e.g. @alex_comic)" value="${currentUser.handle}">
+        <button class="primary" style="width:100%; margin-bottom: 8px;" onclick="handleSupabaseLogin()">Login</button>
+        <button class="primary" style="width:100%; background:#252529; color:#fff;" onclick="handleSupabaseSignUp()">Register ($10)</button>
+      `);
+    }
+
+    async function handleSupabaseLogin() {
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value.trim();
+      if (!email || !password) return showToast("Enter Email and Password!");
+
+      if (dbClient) {
+        showToast("Logging in...");
+        const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
+        if (error) return showToast("Error: " + error.message);
+      }
+      saveAuth();
+    }
+
+    async function handleSupabaseSignUp() {
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value.trim();
+      if (!email || !password) return showToast("Enter Email and Password!");
+
+      if (dbClient) {
+        showToast("Registering...");
+        const { data, error } = await dbClient.auth.signUp({ email, password });
+        if (error) return showToast("Error: " + error.message);
+      }
+      saveAuth();
+    }
+
+    function saveAuth() {
+      const name = document.getElementById("authName").value.trim();
+      let handle = document.getElementById("authHandle").value.trim();
+      if(!handle.startsWith("@")) handle = "@" + handle;
+
+      if(name && handle) {
+        currentUser.name = name;
+        currentUser.handle = handle;
+        saveUserLocally();
+        closeModal();
+        renderView();
+        showToast("Logged in as " + handle);
+      }
     }
 
     function toggleTheme() {
@@ -513,7 +773,6 @@
     }
 
     function openTopup() {
-      if(!currentUser.authenticated) return openAuthModal();
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
         <h2>Deposit ($10 USDT)</h2>
@@ -532,17 +791,7 @@
       showToast("Submitted for approval!");
     }
 
-    function showBuyers(id) {
-      const p = fetchedPosts.find(x => x.id === id);
-      showModal(`
-        <button class="close" onclick="closeModal()">×</button>
-        <h2>Joke Buyers</h2>
-        ${(p.buyers && p.buyers.length) ? p.buyers.join("<br>") : "<p class='muted'>No buyers yet.</p>"}
-      `);
-    }
-
     function openPublish() {
-      if(!currentUser.authenticated) return openAuthModal();
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
         <h2>Publish Joke ($1)</h2>
@@ -560,13 +809,13 @@
       }
     }
 
+    function saveUserLocally() { localStorage.setItem("jest_user", JSON.stringify(currentUser)); }
     function showModal(html) { document.getElementById("modalContent").innerHTML = html; document.getElementById("modal").classList.add("show"); }
     function closeModal() { document.getElementById("modal").classList.remove("show"); }
     function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2500); }
-    function escapeHtml(s) { return s.replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])); }
+    function escapeHtml(s) { return s ? s.replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])) : ""; }
 
-    // Init App
-    checkAuthSession();
+    renderView();
     loadPostsFromSupabase();
   </script>
 </body>
