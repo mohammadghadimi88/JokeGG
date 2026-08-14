@@ -1,287 +1,523 @@
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JEST | کمدی و درآمدزایی</title>
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-color: #f8fafc;
-            --primary: #f59e0b;
-            --primary-hover: #d97706;
-            --border: #334155;
-            --accent: #10b981;
-        }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#0b0b0c">
+  <title>JEST — Comedy Social Marketplace</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --card: #111113;
+      --line: #252529;
+      --text: #f4f4f5;
+      --muted: #929298;
+      --accent: #e8ff4f;
+    }
 
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-        }
+    body.light-mode {
+      --bg: #f4f4f5;
+      --card: #ffffff;
+      --line: #e4e4e7;
+      --text: #09090b;
+      --muted: #71717a;
+      --accent: #facc15;
+    }
 
-        .app-container {
-            width: 100%;
-            max-width: 480px;
-            min-height: 100vh;
-            border-left: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-color);
-        }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      padding-bottom: 70px;
+      transition: background 0.3s, color 0.3s;
+    }
 
-        header {
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            background: var(--card-bg);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
 
-        .logo { font-weight: 900; font-size: 1.4rem; color: var(--primary); }
+    .shell {
+      max-width: 950px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: minmax(0, 620px) 280px;
+      gap: 25px;
+      padding: 0 15px;
+    }
 
-        .wallet-badge {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--accent);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            border: 1px solid var(--accent);
-        }
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      background: var(--bg);
+      opacity: 0.95;
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 5px;
+      border-bottom: 1px solid var(--line);
+    }
 
-        .btn {
-            background: var(--primary);
-            color: #000;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-        .btn:hover { background: var(--primary-hover); }
+    .logo { font-size: 24px; font-weight: 900; }
+    .logo span { color: var(--accent); }
+    .title { font-size: 19px; font-weight: 800; }
 
-        .main-content {
-            flex: 1;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
+    .composer, .post, .profileBox, .modalBox, .card {
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 16px;
+    }
 
-        /* کارت ارسال جوک */
-        .post-box {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem;
-        }
+    .composer { padding: 14px; margin: 16px 0; }
+    .composer textarea {
+      width: 100%;
+      min-height: 80px;
+      background: transparent;
+      border: 0;
+      outline: 0;
+      color: var(--text);
+      font-size: 16px;
+      resize: vertical;
+    }
 
-        textarea {
-            width: 100%;
-            height: 70px;
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text-color);
-            padding: 8px;
-            box-sizing: border-box;
-            resize: none;
-            font-family: inherit;
-        }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .muted { color: var(--muted); }
+    .primary { background: var(--accent); color: #080808; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; }
 
-        .post-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-        }
+    .post { padding: 16px; margin: 12px 0; }
+    .postHead { display: flex; justify-content: space-between; }
+    .user { font-weight: 800; }
+    .handle { color: var(--muted); font-weight: 500; }
+    .content { font-size: 16px; white-space: pre-wrap; margin: 12px 0; }
+    .stats { display: flex; gap: 18px; color: var(--muted); font-size: 13px; }
 
-        /* کارت‌های Feed */
-        .joke-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem;
-        }
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+    .actions button { background: none; border: 0; color: var(--muted); }
+    .buy { color: var(--accent) !important; font-weight: 800; }
 
-        .joke-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-            color: #94a3b8;
-            margin-bottom: 8px;
-        }
+    .right { position: sticky; top: 15px; height: max-content; margin-top: 15px; }
+    .card { margin-top: 15px; padding: 15px; }
 
-        .joke-text {
-            font-size: 1rem;
-            line-height: 1.5;
-            margin: 0;
-        }
+    .profileBox { padding: 20px; margin: 16px 0; }
+    .avatar { width: 56px; height: 56px; border-radius: 50%; background: #202024; color:#fff; display: grid; place-items: center; font-weight: 900; font-size: 20px; }
+    .walletBox { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 
-        /* مودال ورود */
-        .modal {
-            display: none;
-            position: fixed;
-            top:0; left:0; right:0; bottom:0;
-            background: rgba(0,0,0,0.8);
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: var(--bg);
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 10;
+    }
 
-        .modal-content {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            width: 85%;
-            max-width: 320px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            border: 1px solid var(--border);
-        }
+    .bottom-nav button {
+      background: none;
+      border: 0;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      height: 100%;
+      padding: 6px 0;
+    }
 
-        input {
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: var(--bg-color);
-            color: var(--text-color);
-        }
-    </style>
+    .bottom-nav button.active { color: var(--accent); }
+    .nav-icon { font-size: 18px; }
+    .nav-label { font-size: 11px; font-weight: 600; margin-top: 2px; }
+
+    .fab-btn {
+      position: fixed;
+      bottom: 75px;
+      right: 20px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #000;
+      border: 0;
+      font-size: 26px;
+      font-weight: 900;
+      z-index: 9;
+    }
+
+    html[dir="rtl"] .fab-btn { right: auto; left: 20px; }
+
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 20; }
+    .modal.show { display: flex; }
+    .modalBox { width: min(440px, 100%); padding: 20px; }
+    .modalBox input, .modalBox textarea, .modalBox select { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 11px; margin: 7px 0 12px; outline: 0; }
+    .close { float: right; background: none; border: 0; color: var(--muted); font-size: 22px; }
+
+    .addr-box { background: #000; padding: 10px; border-radius: 8px; font-family: monospace; word-break: break-all; margin: 10px 0; border: 1px dashed var(--accent); color: var(--accent); text-align: center; }
+    .toast { position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 999px; display: none; z-index: 30; font-weight: 700; font-size: 13px; text-align: center; }
+
+    @media(max-width: 768px) {
+      .shell { grid-template-columns: 1fr; padding: 0 10px; }
+      .right { display: none; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="app-container">
-    <header>
-        <div class="logo">JEST 😂</div>
-        <div id="userInfo" style="display: flex; gap: 8px; align-items: center;">
-            <div class="wallet-badge" id="walletDisplay">موجودی: $0.00</div>
-            <button id="authBtn" class="btn" onclick="openAuth()">ورود</button>
-        </div>
-    </header>
+  <div class="shell">
+    <main>
+      <header class="top-bar">
+        <div class="logo">J<span>!</span></div>
+        <div class="title" id="pageTitle">Home</div>
+        <button class="primary" style="padding:4px 12px;font-size:12px" onclick="openAuthModal()" id="authBtn">Login</button>
+      </header>
+      <section id="view"></section>
+    </main>
 
-    <div class="main-content">
-        <!-- فرم انتشار جوک -->
-        <div class="post-box">
-            <textarea id="jokeInput" placeholder="یک جوک خنده‌دار بنویس... (هزینه انتشار: $1)"></textarea>
-            <div class="post-actions">
-                <span style="font-size: 0.8rem; color: #94a3b8;">سهم شما از فروش: ۵۰٪</span>
-                <button class="btn" onclick="publishJoke()">انتشار ($1)</button>
+    <aside class="right">
+      <div class="card">
+        <h3>JEST</h3>
+        <small class="muted">Text Comedy Marketplace</small>
+      </div>
+    </aside>
+  </div>
+
+  <nav class="bottom-nav">
+    <button onclick="switchTab('home')" id="tab-home" class="active">
+      <span class="nav-icon">⌂</span>
+      <span class="nav-label" id="lbl-home">Home</span>
+    </button>
+    <button onclick="switchTab('explore')" id="tab-explore">
+      <span class="nav-icon">⌕</span>
+      <span class="nav-label" id="lbl-explore">Trending</span>
+    </button>
+    <button onclick="switchTab('profile')" id="tab-profile">
+      <span class="nav-icon">◉</span>
+      <span class="nav-label" id="lbl-profile">Profile</span>
+    </button>
+  </nav>
+
+  <button class="fab-btn" onclick="openPublish()">+</button>
+
+  <div class="modal" id="modal"><div class="modalBox" id="modalContent"></div></div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ----------------------------------------------------
+    // CONFIGURATION
+    // ----------------------------------------------------
+    const MY_USDT_WALLETPATH = "0xafa01fc139c8d83bb023b19b6e50d780c13af322"; 
+    
+    const SUPABASE_URL = "https://ajddkfdfpmiwwjsoyluh.supabase.co"; 
+    const SUPABASE_KEY = "sb_publishable_rV9kfH5v6te1Bp1brgPhDQ_0lES226_"; 
+    
+    let dbClient = null;
+    try {
+      if (window.supabase && SUPABASE_URL.startsWith("https://")) {
+        dbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+    } catch(e) {}
+
+    // State Variables
+    let currentTab = "home";
+    let currentLang = "en";
+    let isLightMode = false;
+    let currentUser = JSON.parse(localStorage.getItem("jest_user")) || { name: "Guest Comic", handle: "@guest", balance: 10.00 };
+
+    let fetchedPosts = [];
+
+    const dict = {
+      en: {
+        home: "Home", trending: "Trending", profile: "Profile", placeholder: "Type a joke...",
+        cost: "Publishing costs $1", publish: "Publish ($1)", noJokes: "No jokes yet!",
+        balance: "Wallet Balance", deposit: "Deposit $10 (USDT)", earnings: "Creator Earnings",
+        theme: "Theme", lang: "Language", light: "Light Mode", dark: "Dark Mode", login: "Login / Register"
+      },
+      fa: {
+        home: "خانه", trending: "داغ‌ترین‌ها", profile: "پروفایل", placeholder: "یک جوک بنویس...",
+        cost: "هزینه انتشار: ۱ دلار", publish: "انتشار (۱$)", noJokes: "هنوز جوکی نیست!",
+        balance: "موجودی حساب", deposit: "افزایش ۱۰ دلار (USDT)", earnings: "درآمد شما",
+        theme: "تم صفحه", lang: "زبان", light: "روشن (Light)", dark: "تاریک (Dark)", login: "ورود / ثبت نام"
+      }
+    };
+
+    async function loadPostsFromSupabase() {
+      if(!dbClient) return;
+      try {
+        let { data, error } = await dbClient.from('posts').select('*').order('created_at', { ascending: false });
+        if(!error && data) {
+          fetchedPosts = data;
+          renderView();
+        }
+      } catch(err) {}
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll(".bottom-nav button").forEach(b => b.classList.remove("active"));
+      const activeBtn = document.getElementById("tab-" + tab);
+      if(activeBtn) activeBtn.classList.add("active");
+
+      document.getElementById("pageTitle").textContent = dict[currentLang][tab] || tab;
+      renderView();
+    }
+
+    function renderView() {
+      const view = document.getElementById("view");
+      document.getElementById("authBtn").textContent = currentUser.handle !== "@guest" ? currentUser.handle : dict[currentLang].login;
+
+      if (currentTab === "profile") return renderProfile(view);
+      if (currentTab === "explore") return renderExplore(view);
+      renderFeed(view);
+    }
+
+    function renderFeed(v) {
+      const t = dict[currentLang];
+      v.innerHTML = `
+        <div class="composer">
+          <textarea id="quick" placeholder="${t.placeholder}"></textarea>
+          <div class="row">
+            <span class="muted">${t.cost}</span>
+            <button class="primary" onclick="publishJoke()">${t.publish}</button>
+          </div>
+        </div>
+        <div id="postsList">${fetchedPosts.length ? fetchedPosts.map(postTemplate).join("") : `<div class="muted" style="text-align:center;padding:30px">${t.noJokes}</div>`}</div>
+      `;
+    }
+
+    function renderExplore(v) {
+      v.innerHTML = [...fetchedPosts].sort((a,b) => (b.buyers ? b.buyers.length : 0) - (a.buyers ? a.buyers.length : 0)).map(postTemplate).join("");
+    }
+
+    function renderProfile(v) {
+      const t = dict[currentLang];
+      v.innerHTML = `
+        <div class="profileBox">
+          <div class="avatar">${currentUser.name[0]}</div>
+          <h2>${currentUser.name}</h2>
+          <div class="handle">${currentUser.handle}</div>
+          
+          <div class="walletBox">
+            <h3>${t.balance}: <b style="color:var(--text);font-size:18px">$${currentUser.balance.toFixed(2)}</b></h3>
+            <button class="primary" onclick="openTopup()">${t.deposit}</button>
+          </div>
+
+          <div class="walletBox">
+            <h3>Settings</h3>
+            <div class="row" style="margin:10px 0">
+              <span>${t.theme}:</span>
+              <button class="primary" style="padding:4px 12px;font-size:12px" onclick="toggleTheme()">${isLightMode ? t.dark : t.light}</button>
             </div>
+            <div class="row" style="margin:10px 0">
+              <span>${t.lang}:</span>
+              <select onchange="changeLang(this.value)" style="width:auto;padding:4px 8px">
+                <option value="en" ${currentLang==='en'?'selected':''}>English</option>
+                <option value="fa" ${currentLang==='fa'?'selected':''}>فارسی</option>
+              </select>
+            </div>
+          </div>
         </div>
-
-        <!-- فید جوک‌ها -->
-        <div id="jokeFeed" style="display: flex; flex-direction: column; gap: 1rem;">
-            <!-- جوک‌ها به‌صورت خودکار از سوپابیس اینجا بارگذاری می‌شوند -->
-        </div>
-    </div>
-</div>
-
-<!-- مودال احراز هویت -->
-<div class="modal" id="authModal">
-    <div class="modal-content">
-        <h3 style="margin: 0; text-align: center;">ورود به JEST</h3>
-        <input type="email" id="email" placeholder="ایمیل">
-        <input type="password" id="password" placeholder="رمز عبور">
-        <button class="btn" onclick="handleAuth('login')">ورود به حساب</button>
-        <button class="btn" style="background:#334155; color: #fff;" onclick="handleAuth('signup')">ثبت‌نام جدید ($10)</button>
-        <button class="btn" style="background:transparent; color:#ef4444;" onclick="closeAuth()">انصراف</button>
-    </div>
-</div>
-
-<script>
-    // تنظیمات دیتابیس سوپابیس
-    const SUPABASE_URL = 'https://ajddkfdfpmiwwjsoyluh.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // کلید anon شما
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    let currentUser = null;
-
-    // توابع مودال
-    function openAuth() { document.getElementById('authModal').style.display = 'flex'; }
-    function closeAuth() { document.getElementById('authModal').style.display = 'none'; }
-
-    // احراز هویت
-    async function handleAuth(type) {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-
-        if(!email || !password) return alert('لطفاً ایمیل و رمز عبور را وارد کنید.');
-
-        let res = type === 'signup' 
-            ? await supabase.auth.signUp({ email, password })
-            : await supabase.auth.signInWithPassword({ email, password });
-
-        if(res.error) {
-            alert('خطا: ' + res.error.message);
-        } else {
-            currentUser = res.data.user;
-            alert('با موفقیت وارد شدید!');
-            closeAuth();
-            document.getElementById('authBtn').innerText = 'پروفایل';
-            loadJokes();
-        }
+      `;
     }
 
-    // انتشار جوک
+    function postTemplate(p) {
+      return `
+        <article class="post">
+          <div class="postHead">
+            <span class="user">${p.user_handle || "@anonymous"}</span>
+            <span class="muted">#${p.id}</span>
+          </div>
+          <div class="content">${escapeHtml(p.text || "")}</div>
+          <div class="stats">
+            <span>${p.likes || 0} Likes</span>
+            <span>${p.buyers ? p.buyers.length : 0} Buyers</span>
+          </div>
+          <div class="actions">
+            <button onclick="likePost(${p.id})">♡ Like</button>
+            <button onclick="showBuyers(${p.id})">${p.buyers ? p.buyers.length : 0} Buyers</button>
+            <button class="buy" onclick="buyJoke(${p.id})">$1 Use</button>
+          </div>
+        </article>
+      `;
+    }
+
     async function publishJoke() {
-        const text = document.getElementById('jokeInput').value;
-        if(!text) return alert('متن جوک را بنویسید.');
-        if(!currentUser) return openAuth();
+      const txt = document.getElementById("quick") ? document.getElementById("quick").value.trim() : "";
+      if (!txt) return showToast("Write a joke first!");
+      if (currentUser.balance < 1) return showToast("Balance under $1! Deposit first.");
 
-        const { data, error } = await supabase
-            .from('jokes')
-            .insert([{ content: text, user_id: currentUser.id }]);
+      showToast("Publishing...");
 
-        if(error) {
-            alert('خطا در ثبت: ' + error.message);
-        } else {
-            alert('جوک شما با موفقیت منتشر شد!');
-            document.getElementById('jokeInput').value = '';
-            loadJokes();
-        }
+      if(dbClient) {
+        let { error } = await dbClient.from('posts').insert([{ user_handle: currentUser.handle, text: txt }]);
+        if(error) return showToast("Error: " + error.message);
+      }
+
+      currentUser.balance -= 1;
+      saveUserLocally();
+      showToast("Published for $1!");
+      if(document.getElementById("quick")) document.getElementById("quick").value = "";
+      loadPostsFromSupabase();
     }
 
-    // دریافت لیست جوک‌ها
-    async function loadJokes() {
-        const { data: jokes, error } = await supabase
-            .from('jokes')
-            .select('*')
-            .order('created_at', { ascending: false });
+    async function buyJoke(id) {
+      const p = fetchedPosts.find(x => x.id === id);
+      if (currentUser.balance < 1) return showToast("Balance under $1!");
+      
+      currentUser.balance -= 1;
+      saveUserLocally();
+      let buyers = p.buyers || [];
+      buyers.push(currentUser.handle);
 
-        const feed = document.getElementById('jokeFeed');
-        if(jokes && jokes.length > 0) {
-            feed.innerHTML = jokes.map(j => `
-                <div class="joke-card">
-                    <div class="joke-header">
-                        <span>کاربر JEST</span>
-                        <span>۲ دقیقه پیش</span>
-                    </div>
-                    <p class="joke-text">${j.content}</p>
-                </div>
-            `).join('');
-        } else {
-            feed.innerHTML = '<div class="joke-card"><p class="joke-text">هنوز جوکی ثبت نشده است. اولین نفر باشید!</p></div>';
-        }
+      if(dbClient) await dbClient.from('posts').update({ buyers: buyers }).eq('id', id);
+
+      showToast("Purchased!");
+      loadPostsFromSupabase();
     }
 
-    // بارگذاری اولیه
-    loadJokes();
-</script>
+    async function likePost(id) {
+      const p = fetchedPosts.find(x => x.id === id);
+      let newLikes = (p.likes || 0) + 1;
+      if(dbClient) await dbClient.from('posts').update({ likes: newLikes }).eq('id', id);
+      showToast("Liked!");
+      loadPostsFromSupabase();
+    }
 
+    // --- MODULE: SUPABASE AUTHENTICATION ---
+    function openAuthModal() {
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>${dict[currentLang].login}</h2>
+        <input id="authEmail" type="email" placeholder="Email Address">
+        <input id="authPassword" type="password" placeholder="Password">
+        <input id="authName" placeholder="Your Display Name (e.g. Alex)" value="${currentUser.name}">
+        <input id="authHandle" placeholder="Your @handle (e.g. @alex_comic)" value="${currentUser.handle}">
+        <button class="primary" style="width:100%; margin-bottom: 8px;" onclick="handleSupabaseLogin()">Login</button>
+        <button class="primary" style="width:100%; background:#252529; color:#fff;" onclick="handleSupabaseSignUp()">Register ($10)</button>
+      `);
+    }
+
+    async function handleSupabaseLogin() {
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value.trim();
+      if (!email || !password) return showToast("Enter Email and Password!");
+
+      if (dbClient) {
+        showToast("Logging in...");
+        const { data, error } = await dbClient.auth.signInWithPassword({ email, password });
+        if (error) return showToast("Error: " + error.message);
+      }
+      saveAuth();
+    }
+
+    async function handleSupabaseSignUp() {
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value.trim();
+      if (!email || !password) return showToast("Enter Email and Password!");
+
+      if (dbClient) {
+        showToast("Registering...");
+        const { data, error } = await dbClient.auth.signUp({ email, password });
+        if (error) return showToast("Error: " + error.message);
+      }
+      saveAuth();
+    }
+
+    function saveAuth() {
+      const name = document.getElementById("authName").value.trim();
+      let handle = document.getElementById("authHandle").value.trim();
+      if(!handle.startsWith("@")) handle = "@" + handle;
+
+      if(name && handle) {
+        currentUser.name = name;
+        currentUser.handle = handle;
+        saveUserLocally();
+        closeModal();
+        renderView();
+        showToast("Logged in as " + handle);
+      }
+    }
+
+    function toggleTheme() {
+      isLightMode = !isLightMode;
+      document.body.classList.toggle("light-mode", isLightMode);
+      renderView();
+    }
+
+    function changeLang(lang) {
+      currentLang = lang;
+      document.documentElement.dir = lang === "fa" ? "rtl" : "ltr";
+      document.getElementById("lbl-home").textContent = dict[lang].home;
+      document.getElementById("lbl-explore").textContent = dict[lang].trending;
+      document.getElementById("lbl-profile").textContent = dict[lang].profile;
+      switchTab(currentTab);
+    }
+
+    function openTopup() {
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Deposit ($10 USDT)</h2>
+        <p class="muted">Transfer <b>10 USDT (BSC BEP-20)</b> to:</p>
+        <div class="addr-box">${MY_USDT_WALLETPATH}</div>
+        <input id="txhash" placeholder="Enter TxHash...">
+        <button class="primary" style="width:100%" onclick="submitTx()">Submit TxHash</button>
+      `);
+    }
+
+    async function submitTx() {
+      const hash = document.getElementById("txhash").value.trim();
+      if(!hash) return showToast("Enter TxHash!");
+      if(dbClient) await dbClient.from('deposits').insert([{ user_handle: currentUser.handle, tx_hash: hash, amount: 10 }]);
+      closeModal();
+      showToast("Submitted for approval!");
+    }
+
+    function showBuyers(id) {
+      const p = fetchedPosts.find(x => x.id === id);
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Joke Buyers</h2>
+        ${(p.buyers && p.buyers.length) ? p.buyers.join("<br>") : "<p class='muted'>No buyers yet.</p>"}
+      `);
+    }
+
+    function openPublish() {
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Publish Joke ($1)</h2>
+        <textarea id="modalPublishText" rows="4" placeholder="Write joke..."></textarea>
+        <button class="primary" style="width:100%" onclick="publishFromModal()">Publish</button>
+      `);
+    }
+
+    function publishFromModal() {
+      const txt = document.getElementById("modalPublishText").value.trim();
+      if(txt) {
+        closeModal();
+        document.getElementById("quick").value = txt;
+        publishJoke();
+      }
+    }
+
+    function saveUserLocally() { localStorage.setItem("jest_user", JSON.stringify(currentUser)); }
+    function showModal(html) { document.getElementById("modalContent").innerHTML = html; document.getElementById("modal").classList.add("show"); }
+    function closeModal() { document.getElementById("modal").classList.remove("show"); }
+    function showToast(msg) { const t = document.getElementById("toast"); t.textContent = msg; t.style.display = "block"; setTimeout(() => t.style.display = "none", 2500); }
+    function escapeHtml(s) { return s.replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[m])); }
+
+    renderView();
+    loadPostsFromSupabase();
+  </script>
 </body>
 </html>
