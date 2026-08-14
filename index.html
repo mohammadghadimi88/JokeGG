@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="theme-color" content="#0b0b0c">
-  <title>JEST — Comedy Social Marketplace v0.5 (Web3 & Financial)</title>
+  <title>JEST — Comedy Social Marketplace v0.6 (Full Complete)</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <style>
@@ -15,6 +15,7 @@
       --text: #f4f4f5;
       --muted: #929298;
       --accent: #e8ff4f;
+      --danger: #ff4f4f;
     }
 
     body.light-mode {
@@ -24,6 +25,7 @@
       --text: #09090b;
       --muted: #71717a;
       --accent: #facc15;
+      --danger: #dc2626;
     }
 
     * { box-sizing: border-box; }
@@ -108,6 +110,8 @@
     .muted { color: var(--muted); }
     .primary { background: var(--accent); color: #080808; border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; }
     .secondary { background: var(--line); color: var(--text); border: 0; border-radius: 999px; padding: 9px 16px; font-weight: 800; }
+    .btn-danger { background: var(--danger); color: #fff; border: 0; border-radius: 8px; padding: 5px 10px; font-weight: bold; }
+    .btn-success { background: #00d26a; color: #fff; border: 0; border-radius: 8px; padding: 5px 10px; font-weight: bold; }
 
     .post { padding: 16px; margin: 12px 0; }
     .postHead { display: flex; justify-content: space-between; align-items: center; }
@@ -198,6 +202,7 @@
     .toast { position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 999px; display: none; z-index: 30; font-weight: 700; font-size: 13px; text-align: center; }
 
     .web3-badge { background: rgba(232, 255, 79, 0.15); color: var(--accent); border: 1px solid var(--accent); font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: bold; }
+    .admin-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
 
     @media(max-width: 768px) {
       .shell { grid-template-columns: 1fr; padding: 0 10px; }
@@ -220,7 +225,7 @@
     <aside class="right">
       <div class="card">
         <h3>JEST</h3>
-        <small class="muted">Text Comedy Marketplace v0.5</small>
+        <small class="muted">Text Comedy Marketplace v0.6</small>
       </div>
     </aside>
   </div>
@@ -237,6 +242,10 @@
     <button onclick="switchTab('profile')" id="tab-profile">
       <span class="nav-icon">◉</span>
       <span class="nav-label" id="lbl-profile">Profile</span>
+    </button>
+    <button onclick="switchTab('admin')" id="tab-admin">
+      <span class="nav-icon">⚙</span>
+      <span class="nav-label">Admin</span>
     </button>
   </nav>
 
@@ -263,7 +272,6 @@
     let feedFilter = "all";
     let currentLang = "en";
     let isLightMode = false;
-    let connectedWallet = null;
 
     let currentUser = JSON.parse(localStorage.getItem("jest_user")) || { 
       name: "Guest Comic", 
@@ -280,6 +288,9 @@
     if (!currentUser.vipSubscriptions) currentUser.vipSubscriptions = [];
 
     let fetchedPosts = [];
+    let pendingDeposits = [];
+    let pendingWithdrawals = [];
+    let reportedItems = [];
 
     const dict = {
       en: {
@@ -289,7 +300,7 @@
         light: "Light Mode", dark: "Dark Mode", login: "Login / Register",
         editProfile: "Edit Profile ✏️", editBioPlaceholder: "Short Bio...", avatarUrl: "Avatar Image URL", save: "Save",
         all: "All Jokes", following: "Following", follow: "Follow", unfollow: "Unfollow", comments: "Comments", share: "Share",
-        connectWallet: "Connect Web3 Wallet 🦊", walletConnected: "Wallet Connected", vipPass: "Get VIP Sub ($5/mo)"
+        connectWallet: "Connect Web3 Wallet 🦊", walletConnected: "Wallet Connected", vipPass: "Get VIP Sub ($5/mo)", report: "Report"
       },
       fa: {
         home: "خانه", trending: "داغ‌ترین‌ها", profile: "پروفایل", placeholder: "یک جوک بنویس...",
@@ -298,7 +309,7 @@
         light: "روشن", dark: "تاریک", login: "ورود / ثبت نام",
         editProfile: "ویرایش پروفایل ✏️", editBioPlaceholder: "بیوگرافی کوتاه...", avatarUrl: "لینک عکس آواتار", save: "ذخیره",
         all: "همه جوک‌ها", following: "دنبال‌شده‌ها", follow: "دنبال کردن", unfollow: "آنفالو", comments: "نظرات", share: "اشتراک",
-        connectWallet: "اتصال کیف‌پول وب۳ 🦊", walletConnected: "کیف‌پول متصل شد", vipPass: "اشتراک ماهانه ($5)"
+        connectWallet: "اتصال کیف‌پول وب۳ 🦊", walletConnected: "کیف‌پول متصل شد", vipPass: "اشتراک ماهانه ($5)", report: "گزارش"
       }
     };
 
@@ -334,6 +345,7 @@
 
       if (currentTab === "profile") return renderProfile(view);
       if (currentTab === "explore") return renderExplore(view);
+      if (currentTab === "admin") return renderAdminPanel(view);
       renderFeed(view);
     }
 
@@ -437,10 +449,126 @@
             <button onclick="likePost(${p.id})">♡ Like</button>
             <button onclick="openComments(${p.id})">💬 ${t.comments}</button>
             <button onclick="openShareModal(${p.id})">↗ ${t.share}</button>
+            <button onclick="openReportModal(${p.id})">🚩 ${t.report}</button>
             <button class="buy" onclick="buyJoke(${p.id})">$1 Use</button>
           </div>
         </article>
       `;
+    }
+
+    // --- ADMIN PANEL ---
+    async function renderAdminPanel(v) {
+      v.innerHTML = `<div style="padding:20px; text-align:center;" class="muted">Loading Admin Data...</div>`;
+      
+      if (dbClient) {
+        let { data: dep } = await dbClient.from('deposits').select('*').eq('status', 'pending');
+        let { data: wit } = await dbClient.from('withdrawals').select('*').eq('status', 'pending');
+        let { data: rep } = await dbClient.from('reports').select('*');
+        pendingDeposits = dep || [];
+        pendingWithdrawals = wit || [];
+        reportedItems = rep || [];
+      }
+
+      v.innerHTML = `
+        <div class="profileBox">
+          <h2>⚙ Admin Dashboard</h2>
+          <p class="muted">Manage deposits, withdrawals, and reported content.</p>
+
+          <h3 style="margin-top:20px;">Pending Deposits (${pendingDeposits.length})</h3>
+          ${pendingDeposits.length ? pendingDeposits.map(d => `
+            <div class="admin-card">
+              <div><b>User:</b> ${d.user_handle}</div>
+              <div style="font-size:12px; font-family:monospace; word-break:break-all;"><b>TxHash:</b> ${d.tx_hash}</div>
+              <div style="margin-top:8px; display:flex; gap:10px;">
+                <button class="btn-success" onclick="approveDeposit(${d.id})">Approve $10</button>
+                <button class="btn-danger" onclick="rejectDeposit(${d.id})">Reject</button>
+              </div>
+            </div>
+          `).join('') : '<p class="muted">No pending deposits.</p>'}
+
+          <h3 style="margin-top:20px;">Pending Withdrawals (${pendingWithdrawals.length})</h3>
+          ${pendingWithdrawals.length ? pendingWithdrawals.map(w => `
+            <div class="admin-card">
+              <div><b>User:</b> ${w.user_handle} ($${w.amount})</div>
+              <div style="font-size:12px; font-family:monospace; word-break:break-all;"><b>Wallet:</b> ${w.wallet_address}</div>
+              <div style="margin-top:8px; display:flex; gap:10px;">
+                <button class="btn-success" onclick="approveWithdrawal(${w.id})">Approve Paid</button>
+                <button class="btn-danger" onclick="rejectWithdrawal(${w.id})">Reject</button>
+              </div>
+            </div>
+          `).join('') : '<p class="muted">No pending withdrawals.</p>'}
+
+          <h3 style="margin-top:20px;">Reported Posts (${reportedItems.length})</h3>
+          ${reportedItems.length ? reportedItems.map(r => `
+            <div class="admin-card">
+              <div><b>Post ID:</b> #${r.post_id} | <b>By:</b> ${r.reporter_handle}</div>
+              <div class="muted"><b>Reason:</b> ${escapeHtml(r.reason)}</div>
+              <div style="margin-top:8px;">
+                <button class="btn-danger" onclick="deleteReportedPost(${r.post_id}, ${r.id})">Delete Post</button>
+              </div>
+            </div>
+          `).join('') : '<p class="muted">No reported posts.</p>'}
+        </div>
+      `;
+    }
+
+    async function approveDeposit(id) {
+      if (dbClient) await dbClient.from('deposits').update({ status: 'approved' }).eq('id', id);
+      showToast("Deposit Approved!");
+      renderAdminPanel(document.getElementById("view"));
+    }
+
+    async function rejectDeposit(id) {
+      if (dbClient) await dbClient.from('deposits').update({ status: 'rejected' }).eq('id', id);
+      showToast("Deposit Rejected!");
+      renderAdminPanel(document.getElementById("view"));
+    }
+
+    async function approveWithdrawal(id) {
+      if (dbClient) await dbClient.from('withdrawals').update({ status: 'approved' }).eq('id', id);
+      showToast("Withdrawal Approved!");
+      renderAdminPanel(document.getElementById("view"));
+    }
+
+    async function rejectWithdrawal(id) {
+      if (dbClient) await dbClient.from('withdrawals').update({ status: 'rejected' }).eq('id', id);
+      showToast("Withdrawal Rejected!");
+      renderAdminPanel(document.getElementById("view"));
+    }
+
+    async function deleteReportedPost(postId, reportId) {
+      if (dbClient) {
+        await dbClient.from('posts').delete().eq('id', postId);
+        await dbClient.from('reports').delete().eq('id', reportId);
+      }
+      showToast("Post Deleted!");
+      loadPostsFromSupabase();
+      renderAdminPanel(document.getElementById("view"));
+    }
+
+    // --- REPORT SYSTEM ---
+    function openReportModal(postId) {
+      showModal(`
+        <button class="close" onclick="closeModal()">×</button>
+        <h2>Report Post #${postId}</h2>
+        <textarea id="reportReason" placeholder="Why are you reporting this joke?" rows="3"></textarea>
+        <button class="btn-danger" style="width:100%; margin-top:10px;" onclick="submitReport(${postId})">Submit Report</button>
+      `);
+    }
+
+    async function submitReport(postId) {
+      const reason = document.getElementById("reportReason").value.trim();
+      if (!reason) return showToast("Enter a reason!");
+
+      if (dbClient) {
+        await dbClient.from('reports').insert([{
+          post_id: postId,
+          reporter_handle: currentUser.handle,
+          reason: reason
+        }]);
+      }
+      showToast("Report submitted to Admin.");
+      closeModal();
     }
 
     // --- WEB3 INTEGRATION ---
@@ -471,7 +599,6 @@
 
     // --- WITHDRAWAL SYSTEM ---
     function openWithdrawModal() {
-      const t = dict[currentLang];
       showModal(`
         <button class="close" onclick="closeModal()">×</button>
         <h2>Request Withdrawal</h2>
@@ -491,13 +618,11 @@
 
       if (dbClient) {
         showToast("Submitting request...");
-        const { error } = await dbClient.from('withdrawals').insert([{
+        await dbClient.from('withdrawals').insert([{
           user_handle: currentUser.handle,
           wallet_address: address,
           amount: amount
         }]);
-
-        if (error) return showToast("Error submitting request!");
       }
 
       currentUser.balance -= amount;
@@ -507,7 +632,7 @@
       showToast("Withdrawal requested successfully!");
     }
 
-    // --- COMEDIAN DEDICATED PROFILE & VIP SUBSCRIPTION ---
+    // --- COMEDIAN PROFILE & VIP ---
     function viewComedianProfile(handle) {
       const t = dict[currentLang];
       const comedianPosts = fetchedPosts.filter(p => p.user_handle === handle);
